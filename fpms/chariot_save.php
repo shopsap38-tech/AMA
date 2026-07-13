@@ -6,11 +6,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+require_once __DIR__ . '/includes/functions.php';
+
 $id     = (int) ($_POST['id'] ?? 0);
 $code   = trim($_POST['code'] ?? '');
 $marque = trim($_POST['marque'] ?? '');
 $type   = $_POST['type'] ?? '';
 $etat   = $_POST['etat'] ?? '';
+$unite  = $_POST['unite'] ?? '';
+$unite  = array_key_exists($unite, unites()) ? $unite : null;
 $dateMS = $_POST['date_mise_service'] ?? '';
 $dateMS = $dateMS !== '' ? $dateMS : null;
 
@@ -31,10 +35,10 @@ try {
 
         $stmt = $pdo->prepare(
             'UPDATE chariots
-                SET code = ?, marque = ?, type = ?, etat = ?, date_mise_service = ?
+                SET code = ?, marque = ?, type = ?, etat = ?, unite = ?, date_mise_service = ?
               WHERE id = ?'
         );
-        $stmt->execute([$code, $marque, $type, $etat, $dateMS, $id]);
+        $stmt->execute([$code, $marque, $type, $etat, $unite, $dateMS, $id]);
 
         if ($ancienEtat !== false && $ancienEtat !== $etat) {
             $h = $pdo->prepare(
@@ -46,10 +50,10 @@ try {
         $msg = 'Chariot mis à jour.';
     } else {
         $stmt = $pdo->prepare(
-            'INSERT INTO chariots (code, marque, type, etat, date_mise_service)
-             VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO chariots (code, marque, type, etat, unite, date_mise_service)
+             VALUES (?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$code, $marque, $type, $etat, $dateMS]);
+        $stmt->execute([$code, $marque, $type, $etat, $unite, $dateMS]);
         $newId = (int) $pdo->lastInsertId();
 
         $h = $pdo->prepare(

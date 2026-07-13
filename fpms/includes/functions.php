@@ -50,6 +50,43 @@ function pct(float $num, float $den, int $decimales = 1): float
     return $den > 0 ? round($num / $den * 100, $decimales) : 0.0;
 }
 
+/** Liste ordonnée des unités [clé => libellé]. */
+function unites(): array
+{
+    return [
+        'liquide'    => 'Liquide',
+        'sachet'     => 'Sachet',
+        'transfert'  => 'Transfert',
+        'mp'         => 'MP',
+        'chargement' => 'Chargement',
+        'papier'     => 'Papier',
+        'retour'     => 'Retour',
+        'dechet'     => 'Déchet',
+    ];
+}
+
+/** Libellé lisible d'une unité. */
+function unite_label(?string $u): string
+{
+    return $u !== null ? (unites()[$u] ?? $u) : '—';
+}
+
+/**
+ * Répartition des chariots par unité.
+ * Retourne [ 'data' => [clé => nombre] (les 8 unités, zéros inclus),
+ *            'total' => chariots affectés à une unité ].
+ */
+function chariots_par_unite(PDO $pdo): array
+{
+    $data = array_fill_keys(array_keys(unites()), 0);
+    foreach ($pdo->query("SELECT unite, COUNT(*) AS n FROM chariots WHERE unite IS NOT NULL GROUP BY unite") as $row) {
+        if (isset($data[$row['unite']])) {
+            $data[$row['unite']] = (int) $row['n'];
+        }
+    }
+    return ['data' => $data, 'total' => array_sum($data)];
+}
+
 /**
  * Statistiques des chariots : totaux par type, par état et taux de disponibilité.
  */

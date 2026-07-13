@@ -14,16 +14,18 @@ Chaque dashboard combine **KPI en pourcentage (%)**, **tableaux de données stru
 et des **graphiques présentés sous forme d'histogrammes (colonnes), avec le pourcentage
 affiché au-dessus de chaque colonne** :
 - **Dashboard Palettes** : quantités et conformité par état, évolution des palettes créées.
-- **Dashboard Chariots** : répartition par état et par type, temps d'arrêt, mises en service.
+- **Dashboard Chariots** : répartition par état et par type, temps d'arrêt, mises en service,
+  et **répartition des chariots par unité** (Liquide, Sachet, Transfert, MP, Chargement,
+  Papier, Retour, Déchet) avec graphique et pourcentages, plus un tableau détaillé.
 
 Les dashboards **Palettes** et **Chariots**, ainsi que les listes **Palettes** et
 **Chariots**, proposent un **histogramme d'évolution avec un sélecteur Jour / Mois / Année**.
 
-> Tous les graphiques de l'application sont des histogrammes ; le rendu du pourcentage
-> au-dessus des colonnes est fourni par le plugin `assets/charts.js`.
+> Les graphiques sont des histogrammes agrandis et lisibles ; le pourcentage est affiché
+> au-dessus de chaque colonne (plugin `assets/charts.js`).
 
 ### 🚜 Gestion des chariots
-- Fiche : code chariot, marque, type (Électrique / Diesel), état.
+- Fiche : code chariot, marque, type (Électrique / Diesel), état et **unité**.
 - Filtres par type et par état.
 - Historique complet des changements d'état de chaque chariot.
 
@@ -53,7 +55,8 @@ Les dashboards **Palettes** et **Chariots**, ainsi que les listes **Palettes** e
    SOURCE C:/laragon/www/fpms/schema.sql;
    ```
    ou copiez/collez le contenu de `schema.sql` dans un onglet SQL.
-   Le script crée la base et un jeu de données de démonstration.
+   Le script crée une **base vide** (aucune donnée de démonstration) ; vous saisissez
+   vos chariots et palettes depuis l'application.
    > ⚠️ Réimporter `schema.sql` réinitialise entièrement les données.
 4. Vérifiez les identifiants dans `config/database.php`
    (par défaut : utilisateur `root`, mot de passe vide — configuration MySQL par défaut de Laragon).
@@ -91,7 +94,7 @@ fpms/
 ├── export_pdf.php            Export PDF (page imprimable) d'un rapport
 ├── alertes.php               Alertes (stock faible, indisponibilités)
 ├── statistiques.php          Disponibilité + temps d'arrêt
-└── schema.sql                Structure de la base + données de démo
+└── schema.sql                Structure de la base (base vide, sans données)
 ```
 
 ## Remarques techniques

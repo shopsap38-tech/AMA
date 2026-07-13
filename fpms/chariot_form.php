@@ -7,7 +7,7 @@ $currentPage = 'chariots';
 
 $chariot = [
     'id' => '', 'code' => '', 'marque' => '',
-    'type' => 'electrique', 'etat' => 'disponible', 'date_mise_service' => '',
+    'type' => 'electrique', 'etat' => 'disponible', 'unite' => '', 'date_mise_service' => '',
 ];
 
 if (isset($_GET['id'])) {
@@ -57,6 +57,15 @@ require_once __DIR__ . '/includes/header.php';
     <?php if ($isEdit): ?>
         <p class="hint">Tout changement d'état sera enregistré dans l'historique.</p>
     <?php endif; ?>
+
+    <label>Unité
+        <select name="unite">
+            <option value="">— Aucune —</option>
+            <?php foreach (unites() as $key => $label): ?>
+                <option value="<?= $key ?>" <?= ($chariot['unite'] ?? '') === $key ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </label>
 
     <label>Date de mise en service
         <input type="date" name="date_mise_service" value="<?= htmlspecialchars($chariot['date_mise_service'] ?? '') ?>">

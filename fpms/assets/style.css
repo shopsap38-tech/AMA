@@ -155,10 +155,18 @@ h3 { font-size: 1.05rem; font-weight: 700; }
 /* --- Graphiques / cartes --- */
 .charts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+    gap: 1.5rem;
     margin-bottom: 2rem;
 }
+
+@media (max-width: 520px) {
+    .charts-grid { grid-template-columns: 1fr; }
+}
+
+/* Carte de graphique pleine largeur (ex. répartition par unité) */
+.card-chart { margin-bottom: 2rem; }
+.card canvas { max-width: 100%; }
 
 .card {
     background: var(--surface);

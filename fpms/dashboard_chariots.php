@@ -9,6 +9,8 @@ $periode = periode_valide($_GET['periode'] ?? null);
 $c       = stats_chariots($pdo);
 $arret   = temps_arret_par_chariot($pdo);
 $evo     = chariots_evolution($pdo, $periode);
+$unites  = unites();
+$parUnite = chariots_par_unite($pdo);
 
 $chariots = $pdo->query('SELECT * FROM chariots ORDER BY code')->fetchAll();
 
@@ -56,10 +58,36 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 </div>
 
+<h3>Répartition des chariots par unité</h3>
+<div class="card card-chart">
+    <h3>Nombre de chariots par unité</h3>
+    <canvas id="chUnite"></canvas>
+</div>
+
+<table class="table" style="margin-bottom:2rem">
+    <thead>
+        <tr><th>Unité</th><th>Nombre de chariots</th><th>Pourcentage</th></tr>
+    </thead>
+    <tbody>
+        <?php foreach ($unites as $key => $label): $n = $parUnite['data'][$key]; ?>
+            <tr>
+                <td><strong><?= htmlspecialchars($label) ?></strong></td>
+                <td><?= $n ?></td>
+                <td><?= pct($n, $parUnite['total']) ?> %</td>
+            </tr>
+        <?php endforeach; ?>
+        <tr>
+            <td><strong>Total (affectés)</strong></td>
+            <td><strong><?= $parUnite['total'] ?></strong></td>
+            <td>100 %</td>
+        </tr>
+    </tbody>
+</table>
+
 <h3>Détail de la flotte</h3>
 <table class="table">
     <thead>
-        <tr><th>Code</th><th>Marque</th><th>Type</th><th>État</th><th>Mise en service</th></tr>
+        <tr><th>Code</th><th>Marque</th><th>Type</th><th>Unité</th><th>État</th><th>Mise en service</th></tr>
     </thead>
     <tbody>
         <?php foreach ($chariots as $ch): ?>
@@ -67,6 +95,7 @@ require_once __DIR__ . '/includes/header.php';
                 <td><strong><?= htmlspecialchars($ch['code']) ?></strong></td>
                 <td><?= htmlspecialchars($ch['marque']) ?></td>
                 <td><?= $ch['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?></td>
+                <td><?= htmlspecialchars(unite_label($ch['unite'])) ?></td>
                 <td><span class="badge <?= etat_chariot_badge($ch['etat']) ?>"><?= etat_chariot_label($ch['etat']) ?></span></td>
                 <td><?= $ch['date_mise_service'] ? date('d/m/Y', strtotime($ch['date_mise_service'])) : '—' ?></td>
             </tr>
@@ -91,6 +120,11 @@ histogramme('chArret', <?= json_encode(array_column($arret, 'code')) ?>,
 
 histogramme('chEvo', <?= json_encode(array_keys($evo)) ?>,
     <?= json_encode(array_values($evo)) ?>, COL.blue, { titre: 'Chariots' });
+
+const UNITE_COL = ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2','#db2777','#65a30d'];
+histogramme('chUnite', <?= json_encode(array_values($unites)) ?>,
+    <?= json_encode(array_values($parUnite['data'])) ?>, UNITE_COL,
+    { titre: 'Chariots', aspectRatio: 3.4 });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
