@@ -15,7 +15,6 @@ $navGroupes = [
         'chariots'          => ['chariots.php',    'Chariots'],
         'palettes'          => ['palettes.php',    'Palettes'],
         'reparations'       => ['reparations.php', 'Réparations'],
-        'employes'          => ['employes.php',    'Employés'],
     ],
     [
         'rapports'          => ['rapports.php',     'Rapports'],

@@ -10,7 +10,6 @@ $palettes = $pdo->query(
     "SELECT id, code, etat FROM palettes WHERE etat IN ('non_conforme','cassee') ORDER BY code"
 )->fetchAll();
 $paletteSel = (int) ($_GET['palette_id'] ?? 0);
-$employes = employes_actifs($pdo);
 
 $reparations = $pdo->query(
     'SELECT r.*, p.code AS palette_code
@@ -47,16 +46,6 @@ require_once __DIR__ . '/includes/header.php';
                     <?php foreach ($palettes as $pal): ?>
                         <option value="<?= (int) $pal['id'] ?>" <?= $paletteSel === (int) $pal['id'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($pal['code']) ?> (<?= etat_palette_label($pal['etat']) ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label>Réparateur
-                <select name="employe_id">
-                    <option value="">— Aucun —</option>
-                    <?php foreach ($employes as $emp): ?>
-                        <option value="<?= (int) $emp['id'] ?>">
-                            <?= htmlspecialchars($emp['prenom'] . ' ' . $emp['nom']) ?> — <?= type_employe_label($emp['type']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -116,19 +105,10 @@ require_once __DIR__ . '/includes/header.php';
 </table>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/fpms/assets/charts.js"></script>
 <script>
-new Chart(document.getElementById('chartRep'), {
-    type: 'bar',
-    data: {
-        labels: <?= json_encode(array_map(fn($d) => date('d/m', strtotime($d)), array_keys($parJour))) ?>,
-        datasets: [{
-            label: 'Réparations',
-            data: <?= json_encode(array_values($parJour)) ?>,
-            backgroundColor: '#1971c2'
-        }]
-    },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
-});
+histogramme('chartRep', <?= json_encode(array_map(fn($d) => date('d/m', strtotime($d)), array_keys($parJour))) ?>,
+    <?= json_encode(array_values($parJour)) ?>, '#1971c2', { titre: 'Réparations' });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

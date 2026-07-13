@@ -11,8 +11,6 @@ $date        = $_POST['date_reparation'] ?? '';
 $resultat    = $_POST['resultat'] ?? '';
 $description = trim($_POST['description'] ?? '');
 $description = $description !== '' ? $description : null;
-$employeId   = (int) ($_POST['employe_id'] ?? 0);
-$employeId   = $employeId > 0 ? $employeId : null;
 
 if ($paletteId <= 0 || $date === '' || !in_array($resultat, ['reparee', 'irreparable'], true)) {
     header('Location: /fpms/reparations.php?error=' . urlencode('Données de réparation invalides.'));
@@ -23,10 +21,10 @@ try {
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare(
-        'INSERT INTO reparations (palette_id, employe_id, description, resultat, date_reparation)
-         VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO reparations (palette_id, description, resultat, date_reparation)
+         VALUES (?, ?, ?, ?)'
     );
-    $stmt->execute([$paletteId, $employeId, $description, $resultat, $date]);
+    $stmt->execute([$paletteId, $description, $resultat, $date]);
 
     // Mettre à jour l'état de la palette selon le résultat.
     $nouvelEtat = $resultat === 'reparee' ? 'conforme' : 'cassee';

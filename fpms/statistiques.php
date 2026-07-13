@@ -57,37 +57,17 @@ require_once __DIR__ . '/includes/header.php';
 </table>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/fpms/assets/charts.js"></script>
 <script>
 const COL = { green:'#2b8a3e', orange:'#f08c00', red:'#c92a2a', blue:'#1971c2' };
 
-new Chart(document.getElementById('chartDispo'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Disponible', 'Maintenance', 'Panne'],
-        datasets: [{
-            data: [<?= $c['disponible'] ?>, <?= $c['maintenance'] ?>, <?= $c['panne'] ?>],
-            backgroundColor: [COL.green, COL.orange, COL.red]
-        }]
-    },
-    options: { plugins: { legend: { position: 'bottom' } } }
-});
+histogramme('chartDispo', ['Disponible', 'Maintenance', 'Panne'],
+    [<?= $c['disponible'] ?>, <?= $c['maintenance'] ?>, <?= $c['panne'] ?>],
+    [COL.green, COL.orange, COL.red], { titre: 'Chariots' });
 
-new Chart(document.getElementById('chartArret'), {
-    type: 'bar',
-    data: {
-        labels: <?= json_encode(array_column($arret, 'code')) ?>,
-        datasets: [{
-            label: 'Heures d\'arrêt',
-            data: <?= json_encode(array_column($arret, 'heures')) ?>,
-            backgroundColor: COL.red
-        }]
-    },
-    options: {
-        indexAxis: 'y',
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true } }
-    }
-});
+histogramme('chartArret', <?= json_encode(array_column($arret, 'code')) ?>,
+    <?= json_encode(array_column($arret, 'heures')) ?>, COL.red,
+    { titre: 'Heures', horizontal: true });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

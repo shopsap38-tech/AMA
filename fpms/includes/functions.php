@@ -44,12 +44,6 @@ function etat_palette_badge(string $etat): string
     ][$etat] ?? 'badge';
 }
 
-/** Libellé lisible pour un type d'employé. */
-function type_employe_label(string $type): string
-{
-    return ['permanent' => 'Permanent', 'journalier' => 'Journalier'][$type] ?? $type;
-}
-
 /** Calcule un pourcentage arrondi (0 si dénominateur nul). */
 function pct(float $num, float $den, int $decimales = 1): float
 {
@@ -87,15 +81,21 @@ function stats_chariots(PDO $pdo): array
 }
 
 /**
- * Statistiques des palettes : totaux par état.
+ * Statistiques des palettes.
+ * Chaque ligne de palette représente un lot : les compteurs par état additionnent
+ * les quantités (SUM), pas le nombre de lignes.
+ * Retourne les quantités par état, la quantité totale, le nombre de lots et le
+ * total des réparations saisies sur les palettes.
  */
 function stats_palettes(PDO $pdo): array
 {
     $parEtat = ['conforme' => 0, 'non_conforme' => 0, 'cassee' => 0];
-    foreach ($pdo->query('SELECT etat, COUNT(*) AS n FROM palettes GROUP BY etat') as $row) {
-        $parEtat[$row['etat']] = (int) $row['n'];
+    foreach ($pdo->query('SELECT etat, COALESCE(SUM(quantite),0) AS q FROM palettes GROUP BY etat') as $row) {
+        $parEtat[$row['etat']] = (int) $row['q'];
     }
-    $parEtat['total'] = array_sum($parEtat);
+    $parEtat['total']       = $parEtat['conforme'] + $parEtat['non_conforme'] + $parEtat['cassee'];
+    $parEtat['lots']        = (int) $pdo->query('SELECT COUNT(*) FROM palettes')->fetchColumn();
+    $parEtat['reparations'] = (int) $pdo->query('SELECT COALESCE(SUM(nb_reparations),0) FROM palettes')->fetchColumn();
 
     return $parEtat;
 }
@@ -264,123 +264,4 @@ function rapport_data(PDO $pdo, string $type, string $ref): array
         'chariots'           => stats_chariots($pdo),
         'palettes'           => stats_palettes($pdo),
     ];
-}
-
-/** Liste des employés actifs (pour les listes déroulantes). */
-function employes_actifs(PDO $pdo): array
-{
-    return $pdo->query(
-        "SELECT id, matricule, nom, prenom, type, poste
-           FROM employes WHERE actif = 1
-       ORDER BY type, nom, prenom"
-    )->fetchAll();
-}
-
-/** Nombre d'employés actifs par type. */
-function stats_employes(PDO $pdo): array
-{
-    $res = ['permanent' => 0, 'journalier' => 0];
-    foreach ($pdo->query('SELECT type, COUNT(*) AS n FROM employes WHERE actif = 1 GROUP BY type') as $row) {
-        $res[$row['type']] = (int) $row['n'];
-    }
-    $res['total'] = $res['permanent'] + $res['journalier'];
-    return $res;
-}
-
-/**
- * Réparations ventilées par type d'employé.
- * Retourne pour 'permanent' et 'journalier' : total, réparées, irréparables, taux de réussite (%).
- */
-function reparations_par_type_employe(PDO $pdo): array
-{
-    $base = [
-        'permanent'  => ['total' => 0, 'reparee' => 0, 'irreparable' => 0],
-        'journalier' => ['total' => 0, 'reparee' => 0, 'irreparable' => 0],
-    ];
-    $sql = "SELECT e.type, r.resultat, COUNT(*) AS n
-              FROM reparations r
-              JOIN employes e ON e.id = r.employe_id
-          GROUP BY e.type, r.resultat";
-    foreach ($pdo->query($sql) as $row) {
-        if (isset($base[$row['type']])) {
-            $base[$row['type']][$row['resultat']] = (int) $row['n'];
-            $base[$row['type']]['total'] += (int) $row['n'];
-        }
-    }
-    foreach ($base as &$b) {
-        $b['taux_reussite'] = pct($b['reparee'], $b['total']);
-    }
-    return $base;
-}
-
-/**
- * Chariots ventilés par type d'employé (opérateur affecté) : nombre, disponibles,
- * maintenance, panne, taux de disponibilité (%).
- */
-function chariots_par_type_employe(PDO $pdo): array
-{
-    $base = [
-        'permanent'  => ['total' => 0, 'disponible' => 0, 'maintenance' => 0, 'panne' => 0],
-        'journalier' => ['total' => 0, 'disponible' => 0, 'maintenance' => 0, 'panne' => 0],
-    ];
-    $sql = "SELECT e.type, c.etat, COUNT(*) AS n
-              FROM chariots c
-              JOIN employes e ON e.id = c.operateur_id
-          GROUP BY e.type, c.etat";
-    foreach ($pdo->query($sql) as $row) {
-        if (isset($base[$row['type']])) {
-            $base[$row['type']][$row['etat']] = (int) $row['n'];
-            $base[$row['type']]['total'] += (int) $row['n'];
-        }
-    }
-    foreach ($base as &$b) {
-        $b['taux_dispo'] = pct($b['disponible'], $b['total']);
-    }
-    return $base;
-}
-
-/**
- * Palettes ventilées par type d'employé (contrôleur) : nombre, conformes,
- * non conformes, cassées, taux de conformité (%).
- */
-function palettes_par_type_employe(PDO $pdo): array
-{
-    $base = [
-        'permanent'  => ['total' => 0, 'conforme' => 0, 'non_conforme' => 0, 'cassee' => 0],
-        'journalier' => ['total' => 0, 'conforme' => 0, 'non_conforme' => 0, 'cassee' => 0],
-    ];
-    $sql = "SELECT e.type, p.etat, COUNT(*) AS n
-              FROM palettes p
-              JOIN employes e ON e.id = p.controleur_id
-          GROUP BY e.type, p.etat";
-    foreach ($pdo->query($sql) as $row) {
-        if (isset($base[$row['type']])) {
-            $base[$row['type']][$row['etat']] = (int) $row['n'];
-            $base[$row['type']]['total'] += (int) $row['n'];
-        }
-    }
-    foreach ($base as &$b) {
-        $b['taux_conformite'] = pct($b['conforme'], $b['total']);
-    }
-    return $base;
-}
-
-/**
- * Classement des employés par nombre de réparations effectuées.
- */
-function top_reparateurs(PDO $pdo, int $limit = 8): array
-{
-    $stmt = $pdo->prepare(
-        "SELECT e.nom, e.prenom, e.type,
-                COUNT(*) AS total,
-                SUM(r.resultat = 'reparee') AS reparees
-           FROM reparations r
-           JOIN employes e ON e.id = r.employe_id
-       GROUP BY e.id
-       ORDER BY total DESC
-          LIMIT :lim"
-    );
-    $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
-    $stmt->execute();
-    return $stmt->fetchAll();
 }

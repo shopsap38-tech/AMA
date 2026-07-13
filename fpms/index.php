@@ -27,15 +27,15 @@ require_once __DIR__ . '/includes/header.php';
 <div class="charts-grid">
     <a class="card" style="text-decoration:none;color:inherit;border-left:4px solid #2b8a3e" href="/fpms/dashboard_palettes.php">
         <h3>📦 Dashboard Palettes</h3>
-        <p class="hint">Conformité, états et contrôleurs (permanents / journaliers).</p>
+        <p class="hint">Quantités, conformité et réparations des palettes.</p>
     </a>
     <a class="card" style="text-decoration:none;color:inherit;border-left:4px solid #1971c2" href="/fpms/dashboard_chariots.php">
         <h3>🚜 Dashboard Chariots</h3>
-        <p class="hint">Disponibilité, temps d'arrêt et opérateurs affectés.</p>
+        <p class="hint">Disponibilité, répartition et temps d'arrêt.</p>
     </a>
     <a class="card" style="text-decoration:none;color:inherit;border-left:4px solid #f08c00" href="/fpms/dashboard_reparations.php">
         <h3>🔧 Dashboard Réparations</h3>
-        <p class="hint">Taux de réussite et performance par type d'employé.</p>
+        <p class="hint">Taux de réussite et activité des réparations.</p>
     </a>
 </div>
 
@@ -66,11 +66,11 @@ require_once __DIR__ . '/includes/header.php';
         <div class="kpi-value"><?= $c['panne'] ?></div>
     </div>
     <div class="kpi-card green">
-        <div class="kpi-label">Palettes conformes</div>
+        <div class="kpi-label">Palettes conformes (qté)</div>
         <div class="kpi-value"><?= $p['conforme'] ?></div>
     </div>
     <div class="kpi-card red">
-        <div class="kpi-label">Palettes non conformes</div>
+        <div class="kpi-label">Palettes non conformes (qté)</div>
         <div class="kpi-value"><?= $p['non_conforme'] + $p['cassee'] ?></div>
     </div>
     <div class="kpi-card">
@@ -81,68 +81,26 @@ require_once __DIR__ . '/includes/header.php';
 
 <h3>Graphiques interactifs</h3>
 <div class="charts-grid">
-    <div class="card"><h3>État de la flotte</h3><canvas id="chartEtat"></canvas></div>
     <div class="card"><h3>Chariots par type</h3><canvas id="chartType"></canvas></div>
-    <div class="card"><h3>Palettes par état</h3><canvas id="chartPalettes"></canvas></div>
+    <div class="card"><h3>Palettes par état (quantité)</h3><canvas id="chartPalettes"></canvas></div>
     <div class="card"><h3>Réparations / jour (14 j)</h3><canvas id="chartReparations"></canvas></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/fpms/assets/charts.js"></script>
 <script>
-const COL = { green:'#2b8a3e', orange:'#f08c00', red:'#c92a2a', blue:'#1971c2', purple:'#7048e8', grey:'#adb5bd' };
+const COL = { green:'#2b8a3e', orange:'#f08c00', red:'#c92a2a', blue:'#1971c2', purple:'#7048e8' };
 
-new Chart(document.getElementById('chartEtat'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Disponible', 'Maintenance', 'Panne'],
-        datasets: [{
-            data: [<?= $c['disponible'] ?>, <?= $c['maintenance'] ?>, <?= $c['panne'] ?>],
-            backgroundColor: [COL.green, COL.orange, COL.red]
-        }]
-    },
-    options: { plugins: { legend: { position: 'bottom' } } }
-});
+histogramme('chartType', ['Électrique', 'Diesel'],
+    [<?= $c['electrique'] ?>, <?= $c['diesel'] ?>], [COL.purple, COL.orange], { titre: 'Chariots' });
 
-new Chart(document.getElementById('chartType'), {
-    type: 'bar',
-    data: {
-        labels: ['Électrique', 'Diesel'],
-        datasets: [{
-            label: 'Chariots',
-            data: [<?= $c['electrique'] ?>, <?= $c['diesel'] ?>],
-            backgroundColor: [COL.purple, COL.orange]
-        }]
-    },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
-});
+histogramme('chartPalettes', ['Conforme', 'Non conforme', 'Cassée'],
+    [<?= $p['conforme'] ?>, <?= $p['non_conforme'] ?>, <?= $p['cassee'] ?>],
+    [COL.green, COL.orange, COL.red], { titre: 'Quantité' });
 
-new Chart(document.getElementById('chartPalettes'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Conforme', 'Non conforme', 'Cassée'],
-        datasets: [{
-            data: [<?= $p['conforme'] ?>, <?= $p['non_conforme'] ?>, <?= $p['cassee'] ?>],
-            backgroundColor: [COL.green, COL.orange, COL.red]
-        }]
-    },
-    options: { plugins: { legend: { position: 'bottom' } } }
-});
-
-new Chart(document.getElementById('chartReparations'), {
-    type: 'line',
-    data: {
-        labels: <?= json_encode(array_map(fn($d) => date('d/m', strtotime($d)), array_keys($rep))) ?>,
-        datasets: [{
-            label: 'Réparations',
-            data: <?= json_encode(array_values($rep)) ?>,
-            borderColor: COL.blue,
-            backgroundColor: 'rgba(25,113,194,0.15)',
-            fill: true,
-            tension: 0.3
-        }]
-    },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
-});
+histogramme('chartReparations',
+    <?= json_encode(array_map(fn($d) => date('d/m', strtotime($d)), array_keys($rep))) ?>,
+    <?= json_encode(array_values($rep)) ?>, COL.blue, { titre: 'Réparations' });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

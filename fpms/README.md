@@ -7,21 +7,18 @@ Application **PHP + MySQL** de gestion de flotte de chariots et de palettes.
 ### 🏠 Accueil
 - KPI en temps réel : total chariots, chariots électriques / diesel, disponibles,
   en maintenance, en panne, palettes conformes / non conformes, taux de disponibilité.
-- Graphiques interactifs (Chart.js) : état de la flotte, répartition par type,
-  état des palettes, réparations par jour.
-- Accès direct aux trois tableaux de bord spécialisés.
+- Graphiques interactifs et accès direct aux trois tableaux de bord spécialisés.
 
 ### 📊 Trois tableaux de bord spécialisés
-Chaque dashboard combine **KPI en pourcentage (%)**, **graphiques** (barres, secteurs,
-courbes), **tableaux de données structurés** et une **distinction claire entre employés
-permanents et journaliers** :
-- **Dashboard Palettes** : conformité par état, taux de conformité par type d'employé (contrôleur).
-- **Dashboard Chariots** : disponibilité, temps d'arrêt, taux de disponibilité par type d'opérateur.
-- **Dashboard Réparations** : taux de réussite, résultats et classement des réparateurs par statut.
+Chaque dashboard combine **KPI en pourcentage (%)**, **tableaux de données structurés**
+et des **graphiques présentés sous forme d'histogrammes (colonnes), avec le pourcentage
+affiché au-dessus de chaque colonne** :
+- **Dashboard Palettes** : quantités et conformité par état, réparations par palette.
+- **Dashboard Chariots** : répartition par état et par type, temps d'arrêt par chariot.
+- **Dashboard Réparations** : taux de réussite, réparations par jour et résultats.
 
-### 👷 Gestion des employés
-- Employés **permanents** et **journaliers** (matricule, nom, poste, statut, actif).
-- Affectation d'un opérateur aux chariots, d'un contrôleur aux palettes et d'un réparateur aux réparations.
+> Tous les graphiques de l'application sont des histogrammes ; le rendu du pourcentage
+> au-dessus des colonnes est fourni par le plugin `assets/charts.js`.
 
 ### 🚜 Gestion des chariots
 - Fiche complète : code chariot, marque, modèle, type (Électrique / Diesel), état.
@@ -29,9 +26,11 @@ permanents et journaliers** :
 - Historique complet des changements d'état de chaque chariot.
 
 ### 📦 Gestion des palettes
-- Palettes conformes, non conformes et cassées.
+- Palettes conformes, non conformes et cassées, avec **quantité par lot** et
+  **nombre de réparations** saisissables sur chaque palette.
+- Les indicateurs additionnent les quantités (une ligne = un lot de N palettes).
 - Réparation des palettes (une réparation « réparée » remet la palette conforme).
-- Nombre de réparations par jour (graphique).
+- Nombre de réparations par jour (histogramme).
 
 ### 📊 Rapports
 - Rapport journalier, mensuel et annuel.
@@ -57,8 +56,6 @@ permanents et journaliers** :
    ou copiez/collez le contenu de `schema.sql` dans un onglet SQL.
    Le script crée la base et un jeu de données de démonstration.
    > ⚠️ Réimporter `schema.sql` réinitialise entièrement les données.
-   > Si vous avez déjà une base FPMS à conserver, exécutez plutôt
-   > `migration_dashboards.sql` (ajoute les employés et les affectations sans effacer vos données).
 4. Vérifiez les identifiants dans `config/database.php`
    (par défaut : utilisateur `root`, mot de passe vide — configuration MySQL par défaut de Laragon).
 5. Ouvrez `http://fpms.test` (ou `http://localhost/fpms`) dans votre navigateur.
@@ -70,20 +67,18 @@ permanents et journaliers** :
 
 ```
 fpms/
-├── assets/style.css          Feuille de style
+├── assets/
+│   ├── style.css            Feuille de style
+│   └── charts.js            Plugin histogrammes + % au-dessus des colonnes
 ├── config/database.php       Connexion PDO + constantes
 ├── includes/
 │   ├── header.php            En-tête + navigation groupée
 │   ├── footer.php            Pied de page
-│   └── functions.php         Requêtes statistiques partagées (dont ventilations par type d'employé)
+│   └── functions.php         Requêtes statistiques partagées
 ├── index.php                 Accueil (KPI + graphiques + accès dashboards)
 ├── dashboard_palettes.php    Tableau de bord des palettes
 ├── dashboard_chariots.php    Tableau de bord des chariots élévateurs
 ├── dashboard_reparations.php Tableau de bord des réparations
-├── employes.php              Liste des employés (permanents / journaliers)
-├── employe_form.php          Fiche employé (ajout / modification)
-├── employe_save.php          Traitement de la fiche employé
-├── employe_delete.php        Suppression d'un employé
 ├── chariots.php              Liste des chariots + filtres
 ├── chariot_form.php          Fiche chariot (ajout / modification)
 ├── chariot_save.php          Traitement de la fiche chariot

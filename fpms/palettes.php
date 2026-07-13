@@ -34,20 +34,24 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="kpi-grid">
     <div class="kpi-card green">
-        <div class="kpi-label">Conformes</div>
+        <div class="kpi-label">Conformes (qté)</div>
         <div class="kpi-value"><?= $p['conforme'] ?></div>
     </div>
     <div class="kpi-card orange">
-        <div class="kpi-label">Non conformes</div>
+        <div class="kpi-label">Non conformes (qté)</div>
         <div class="kpi-value"><?= $p['non_conforme'] ?></div>
     </div>
     <div class="kpi-card red">
-        <div class="kpi-label">Cassées</div>
+        <div class="kpi-label">Cassées (qté)</div>
         <div class="kpi-value"><?= $p['cassee'] ?></div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-label">Total palettes</div>
+        <div class="kpi-label">Quantité totale</div>
         <div class="kpi-value"><?= $p['total'] ?></div>
+    </div>
+    <div class="kpi-card blue">
+        <div class="kpi-label">Total réparations</div>
+        <div class="kpi-value"><?= $p['reparations'] ?></div>
     </div>
 </div>
 
@@ -68,18 +72,22 @@ require_once __DIR__ . '/includes/header.php';
         <tr>
             <th>Code</th>
             <th>État</th>
+            <th>Quantité</th>
+            <th>Réparations</th>
             <th>Commentaire</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         <?php if (empty($palettes)): ?>
-            <tr><td colspan="4">Aucune palette enregistrée.</td></tr>
+            <tr><td colspan="6">Aucune palette enregistrée.</td></tr>
         <?php endif; ?>
         <?php foreach ($palettes as $pal): ?>
             <tr class="<?= $pal['etat'] === 'cassee' ? 'row-alert' : '' ?>">
                 <td><strong><?= htmlspecialchars($pal['code']) ?></strong></td>
                 <td><span class="badge <?= etat_palette_badge($pal['etat']) ?>"><?= etat_palette_label($pal['etat']) ?></span></td>
+                <td><?= (int) $pal['quantite'] ?></td>
+                <td><?= (int) $pal['nb_reparations'] ?></td>
                 <td><?= htmlspecialchars($pal['commentaire'] ?? '') ?></td>
                 <td class="actions">
                     <?php if ($pal['etat'] !== 'conforme'): ?>
