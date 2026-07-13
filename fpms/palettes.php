@@ -6,6 +6,7 @@ $pageTitle   = 'FPMS - Palettes';
 $currentPage = 'palettes';
 
 $filtreEtat = $_GET['etat'] ?? '';
+$periode    = periode_valide($_GET['periode'] ?? null);
 
 $sql = 'SELECT * FROM palettes';
 $params = [];
@@ -18,7 +19,8 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $palettes = $stmt->fetchAll();
 
-$p = stats_palettes($pdo);
+$p   = stats_palettes($pdo);
+$evo = palettes_evolution($pdo, $periode);
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -49,13 +51,18 @@ require_once __DIR__ . '/includes/header.php';
         <div class="kpi-label">Quantité totale</div>
         <div class="kpi-value"><?= $p['total'] ?></div>
     </div>
-    <div class="kpi-card blue">
-        <div class="kpi-label">Total réparations</div>
-        <div class="kpi-value"><?= $p['reparations'] ?></div>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem">
+    <div class="card-head">
+        <h3>Palettes créées (quantité)</h3>
+        <?= periode_selector($periode) ?>
     </div>
+    <canvas id="chEvo"></canvas>
 </div>
 
 <form class="filters" method="get">
+    <input type="hidden" name="periode" value="<?= htmlspecialchars($periode) ?>">
     <label>État
         <select name="etat" onchange="this.form.submit()">
             <option value="">Tous</option>
@@ -73,26 +80,21 @@ require_once __DIR__ . '/includes/header.php';
             <th>Code</th>
             <th>État</th>
             <th>Quantité</th>
-            <th>Réparations</th>
             <th>Commentaire</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         <?php if (empty($palettes)): ?>
-            <tr><td colspan="6">Aucune palette enregistrée.</td></tr>
+            <tr><td colspan="5">Aucune palette enregistrée.</td></tr>
         <?php endif; ?>
         <?php foreach ($palettes as $pal): ?>
             <tr class="<?= $pal['etat'] === 'cassee' ? 'row-alert' : '' ?>">
                 <td><strong><?= htmlspecialchars($pal['code']) ?></strong></td>
                 <td><span class="badge <?= etat_palette_badge($pal['etat']) ?>"><?= etat_palette_label($pal['etat']) ?></span></td>
                 <td><?= (int) $pal['quantite'] ?></td>
-                <td><?= (int) $pal['nb_reparations'] ?></td>
                 <td><?= htmlspecialchars($pal['commentaire'] ?? '') ?></td>
                 <td class="actions">
-                    <?php if ($pal['etat'] !== 'conforme'): ?>
-                        <a href="/fpms/reparations.php?palette_id=<?= (int) $pal['id'] ?>">Réparer</a>
-                    <?php endif; ?>
                     <a href="/fpms/palette_form.php?id=<?= (int) $pal['id'] ?>">Modifier</a>
                     <a class="danger" href="/fpms/palette_delete.php?id=<?= (int) $pal['id'] ?>"
                        onclick="return confirm('Supprimer cette palette ?');">Supprimer</a>
@@ -101,5 +103,12 @@ require_once __DIR__ . '/includes/header.php';
         <?php endforeach; ?>
     </tbody>
 </table>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/fpms/assets/charts.js"></script>
+<script>
+histogramme('chEvo', <?= json_encode(array_keys($evo)) ?>,
+    <?= json_encode(array_values($evo)) ?>, '#2563eb', { titre: 'Quantité' });
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

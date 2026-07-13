@@ -7,30 +7,29 @@ Application **PHP + MySQL** de gestion de flotte de chariots et de palettes.
 ### 🏠 Accueil
 - KPI en temps réel : total chariots, chariots électriques / diesel, disponibles,
   en maintenance, en panne, palettes conformes / non conformes, taux de disponibilité.
-- Graphiques interactifs et accès direct aux trois tableaux de bord spécialisés.
+- Graphiques interactifs et accès direct aux deux tableaux de bord spécialisés.
 
-### 📊 Trois tableaux de bord spécialisés
+### 📊 Deux tableaux de bord spécialisés
 Chaque dashboard combine **KPI en pourcentage (%)**, **tableaux de données structurés**
 et des **graphiques présentés sous forme d'histogrammes (colonnes), avec le pourcentage
 affiché au-dessus de chaque colonne** :
-- **Dashboard Palettes** : quantités et conformité par état, réparations par palette.
-- **Dashboard Chariots** : répartition par état et par type, temps d'arrêt par chariot.
-- **Dashboard Réparations** : taux de réussite, réparations par jour et résultats.
+- **Dashboard Palettes** : quantités et conformité par état, évolution des palettes créées.
+- **Dashboard Chariots** : répartition par état et par type, temps d'arrêt, mises en service.
+
+Les dashboards **Palettes** et **Chariots**, ainsi que les listes **Palettes** et
+**Chariots**, proposent un **histogramme d'évolution avec un sélecteur Jour / Mois / Année**.
 
 > Tous les graphiques de l'application sont des histogrammes ; le rendu du pourcentage
 > au-dessus des colonnes est fourni par le plugin `assets/charts.js`.
 
 ### 🚜 Gestion des chariots
-- Fiche complète : code chariot, marque, modèle, type (Électrique / Diesel), état.
+- Fiche : code chariot, marque, type (Électrique / Diesel), état.
 - Filtres par type et par état.
 - Historique complet des changements d'état de chaque chariot.
 
 ### 📦 Gestion des palettes
-- Palettes conformes, non conformes et cassées, avec **quantité par lot** et
-  **nombre de réparations** saisissables sur chaque palette.
+- Palettes conformes, non conformes et cassées, avec **quantité par lot**.
 - Les indicateurs additionnent les quantités (une ligne = un lot de N palettes).
-- Réparation des palettes (une réparation « réparée » remet la palette conforme).
-- Nombre de réparations par jour (histogramme).
 
 ### 📊 Rapports
 - Rapport journalier, mensuel et annuel.
@@ -76,20 +75,17 @@ fpms/
 │   ├── footer.php            Pied de page
 │   └── functions.php         Requêtes statistiques partagées
 ├── index.php                 Accueil (KPI + graphiques + accès dashboards)
-├── dashboard_palettes.php    Tableau de bord des palettes
-├── dashboard_chariots.php    Tableau de bord des chariots élévateurs
-├── dashboard_reparations.php Tableau de bord des réparations
-├── chariots.php              Liste des chariots + filtres
+├── dashboard_palettes.php    Tableau de bord des palettes (+ évolution jour/mois/année)
+├── dashboard_chariots.php    Tableau de bord des chariots (+ évolution jour/mois/année)
+├── chariots.php              Liste des chariots + filtres + évolution
 ├── chariot_form.php          Fiche chariot (ajout / modification)
 ├── chariot_save.php          Traitement de la fiche chariot
 ├── chariot_delete.php        Suppression d'un chariot
 ├── chariot_historique.php    Historique d'un chariot
-├── palettes.php              Liste des palettes + filtres
+├── palettes.php              Liste des palettes + filtres + évolution
 ├── palette_form.php          Fiche palette (ajout / modification)
 ├── palette_save.php          Traitement de la fiche palette
 ├── palette_delete.php        Suppression d'une palette
-├── reparations.php           Réparations + réparations par jour
-├── reparation_save.php       Traitement d'une réparation
 ├── rapports.php              Rapports journalier / mensuel / annuel
 ├── export_excel.php          Export CSV / Excel d'un rapport
 ├── export_pdf.php            Export PDF (page imprimable) d'un rapport

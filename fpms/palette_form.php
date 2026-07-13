@@ -4,7 +4,7 @@ require_once __DIR__ . '/config/database.php';
 $pageTitle   = 'FPMS - Fiche palette';
 $currentPage = 'palettes';
 
-$palette = ['id' => '', 'code' => '', 'etat' => 'conforme', 'quantite' => 1, 'nb_reparations' => 0, 'commentaire' => ''];
+$palette = ['id' => '', 'code' => '', 'etat' => 'conforme', 'quantite' => 1, 'commentaire' => ''];
 
 if (isset($_GET['id'])) {
     $stmt = $pdo->prepare('SELECT * FROM palettes WHERE id = ?');
@@ -43,11 +43,6 @@ require_once __DIR__ . '/includes/header.php';
     <label>Quantité *
         <input type="number" name="quantite" min="0" required value="<?= (int) $palette['quantite'] ?>">
         <span class="hint">Nombre de palettes dans ce lot.</span>
-    </label>
-
-    <label>Nombre de réparations
-        <input type="number" name="nb_reparations" min="0" value="<?= (int) $palette['nb_reparations'] ?>">
-        <span class="hint">Réparations déjà effectuées sur ce lot.</span>
     </label>
 
     <label>Commentaire

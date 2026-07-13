@@ -38,7 +38,7 @@ require_once __DIR__ . '/includes/header.php';
 <h3>Chariots indisponibles (<?= count($chariotsHS) ?>)</h3>
 <table class="table" style="margin-bottom:1.5rem">
     <thead>
-        <tr><th>Code</th><th>Marque / Modèle</th><th>Type</th><th>État</th></tr>
+        <tr><th>Code</th><th>Marque</th><th>Type</th><th>État</th></tr>
     </thead>
     <tbody>
         <?php if (empty($chariotsHS)): ?>
@@ -47,7 +47,7 @@ require_once __DIR__ . '/includes/header.php';
         <?php foreach ($chariotsHS as $ch): ?>
             <tr class="row-alert">
                 <td><strong><?= htmlspecialchars($ch['code']) ?></strong></td>
-                <td><?= htmlspecialchars($ch['marque'] . ' ' . $ch['modele']) ?></td>
+                <td><?= htmlspecialchars($ch['marque']) ?></td>
                 <td><?= $ch['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?></td>
                 <td><span class="badge <?= etat_chariot_badge($ch['etat']) ?>"><?= etat_chariot_label($ch['etat']) ?></span></td>
             </tr>

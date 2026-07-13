@@ -84,8 +84,7 @@ function stats_chariots(PDO $pdo): array
  * Statistiques des palettes.
  * Chaque ligne de palette représente un lot : les compteurs par état additionnent
  * les quantités (SUM), pas le nombre de lignes.
- * Retourne les quantités par état, la quantité totale, le nombre de lots et le
- * total des réparations saisies sur les palettes.
+ * Retourne les quantités par état, la quantité totale et le nombre de lots.
  */
 function stats_palettes(PDO $pdo): array
 {
@@ -93,41 +92,98 @@ function stats_palettes(PDO $pdo): array
     foreach ($pdo->query('SELECT etat, COALESCE(SUM(quantite),0) AS q FROM palettes GROUP BY etat') as $row) {
         $parEtat[$row['etat']] = (int) $row['q'];
     }
-    $parEtat['total']       = $parEtat['conforme'] + $parEtat['non_conforme'] + $parEtat['cassee'];
-    $parEtat['lots']        = (int) $pdo->query('SELECT COUNT(*) FROM palettes')->fetchColumn();
-    $parEtat['reparations'] = (int) $pdo->query('SELECT COALESCE(SUM(nb_reparations),0) FROM palettes')->fetchColumn();
+    $parEtat['total'] = $parEtat['conforme'] + $parEtat['non_conforme'] + $parEtat['cassee'];
+    $parEtat['lots']  = (int) $pdo->query('SELECT COUNT(*) FROM palettes')->fetchColumn();
 
     return $parEtat;
 }
 
 /**
- * Nombre de réparations par jour sur les N derniers jours.
- * Retourne un tableau [ 'AAAA-MM-JJ' => nombre ] ordonné du plus ancien au plus récent.
+ * Construit la liste ordonnée des périodes [clé => libellé] pour une granularité.
+ * $periode : 'jour' (14 derniers jours) | 'mois' (12 derniers mois) | 'annee' (6 dernières années).
+ * La clé correspond au regroupement SQL (Y-m-d, Y-m ou Y).
  */
-function reparations_par_jour(PDO $pdo, int $jours = 14): array
+function periodes_labels(string $periode): array
 {
-    $stmt = $pdo->prepare(
-        'SELECT date_reparation, COUNT(*) AS n
-           FROM reparations
-          WHERE date_reparation >= CURDATE() - INTERVAL :jours DAY
-       GROUP BY date_reparation'
-    );
-    $stmt->bindValue(':jours', $jours, PDO::PARAM_INT);
-    $stmt->execute();
+    $out = [];
+    if ($periode === 'annee') {
+        for ($i = 5; $i >= 0; $i--) {
+            $y = date('Y', strtotime("-$i year"));
+            $out[$y] = $y;
+        }
+    } elseif ($periode === 'mois') {
+        for ($i = 11; $i >= 0; $i--) {
+            $k = date('Y-m', strtotime("first day of -$i month"));
+            $out[$k] = date('m/Y', strtotime($k . '-01'));
+        }
+    } else { // jour
+        for ($i = 13; $i >= 0; $i--) {
+            $k = date('Y-m-d', strtotime("-$i day"));
+            $out[$k] = date('d/m', strtotime($k));
+        }
+    }
+    return $out;
+}
 
-    $data = [];
-    foreach ($stmt as $row) {
-        $data[$row['date_reparation']] = (int) $row['n'];
+/**
+ * Évolution d'une valeur agrégée dans le temps, selon une granularité.
+ * Retourne un tableau [ libellé => valeur ] complété (zéros inclus).
+ * Les paramètres $table, $dateCol et $valueExpr sont des constantes internes (pas d'entrée utilisateur).
+ */
+function evolution(PDO $pdo, string $table, string $dateCol, string $valueExpr, string $periode): array
+{
+    if ($periode === 'annee') {
+        $grp = "YEAR($dateCol)";
+    } elseif ($periode === 'mois') {
+        $grp = "DATE_FORMAT($dateCol, '%Y-%m')";
+    } else {
+        $grp = "DATE($dateCol)";
     }
 
-    // Compléter tous les jours de l'intervalle, même à zéro.
+    $map = [];
+    $sql = "SELECT $grp AS k, $valueExpr AS v FROM $table WHERE $dateCol IS NOT NULL GROUP BY k";
+    foreach ($pdo->query($sql) as $row) {
+        $map[(string) $row['k']] = (float) $row['v'];
+    }
+
     $serie = [];
-    for ($i = $jours - 1; $i >= 0; $i--) {
-        $jour = date('Y-m-d', strtotime("-$i day"));
-        $serie[$jour] = $data[$jour] ?? 0;
+    foreach (periodes_labels($periode) as $key => $label) {
+        $serie[$label] = $map[(string) $key] ?? 0;
     }
-
     return $serie;
+}
+
+/** Quantité de palettes créées par période (jour / mois / année). */
+function palettes_evolution(PDO $pdo, string $periode): array
+{
+    return evolution($pdo, 'palettes', 'created_at', 'COALESCE(SUM(quantite),0)', $periode);
+}
+
+/** Nombre de chariots mis en service par période (jour / mois / année). */
+function chariots_evolution(PDO $pdo, string $periode): array
+{
+    return evolution($pdo, 'chariots', 'date_mise_service', 'COUNT(*)', $periode);
+}
+
+/** Normalise le paramètre de granularité de période. */
+function periode_valide(?string $p): string
+{
+    return in_array($p, ['jour', 'mois', 'annee'], true) ? $p : 'jour';
+}
+
+/**
+ * Rend les onglets Jour / Mois / Année en conservant les autres paramètres GET.
+ */
+function periode_selector(string $active): string
+{
+    $labels = ['jour' => 'Jour', 'mois' => 'Mois', 'annee' => 'Année'];
+    $html = '<div class="periode-tabs">';
+    foreach ($labels as $key => $lab) {
+        $url = '?' . http_build_query(array_merge($_GET, ['periode' => $key]));
+        $cls = $active === $key ? ' class="active"' : '';
+        $html .= '<a href="' . htmlspecialchars($url) . '"' . $cls . '>' . $lab . '</a>';
+    }
+    return $html . '</div>';
 }
 
 /**
@@ -220,19 +276,6 @@ function rapport_data(PDO $pdo, string $type, string $ref): array
     $debut = $int['debut'];
     $fin = $int['fin'];
 
-    // Réparations de la période, par résultat.
-    $stmt = $pdo->prepare(
-        'SELECT resultat, COUNT(*) AS n
-           FROM reparations
-          WHERE date_reparation >= ? AND date_reparation < ?
-       GROUP BY resultat'
-    );
-    $stmt->execute([$debut, $fin]);
-    $rep = ['reparee' => 0, 'irreparable' => 0];
-    foreach ($stmt as $row) {
-        $rep[$row['resultat']] = (int) $row['n'];
-    }
-
     // Changements d'état des chariots dans la période.
     $stmt = $pdo->prepare(
         'SELECT COUNT(*) FROM chariot_historique WHERE date_evenement >= ? AND date_evenement < ?'
@@ -255,9 +298,6 @@ function rapport_data(PDO $pdo, string $type, string $ref): array
         'libelle'            => $int['libelle'],
         'debut'              => $debut,
         'fin'                => $fin,
-        'reparations_total'  => $rep['reparee'] + $rep['irreparable'],
-        'reparations_reparee'=> $rep['reparee'],
-        'reparations_irrep'  => $rep['irreparable'],
         'changements_etat'   => $changementsEtat,
         'nouvelles_palettes' => $nouvellesPalettes,
         'nouveaux_chariots'  => $nouveauxChariots,

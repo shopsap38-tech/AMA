@@ -46,9 +46,6 @@ $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES);
 
     <h2>Activité de la période</h2>
     <table>
-        <tr><th>Réparations sur la période</th><td><?= $e($d['reparations_total']) ?></td></tr>
-        <tr><th>Palettes réparées</th><td><?= $e($d['reparations_reparee']) ?></td></tr>
-        <tr><th>Palettes irréparables</th><td><?= $e($d['reparations_irrep']) ?></td></tr>
         <tr><th>Changements d'état des chariots</th><td><?= $e($d['changements_etat']) ?></td></tr>
         <tr><th>Nouvelles palettes</th><td><?= $e($d['nouvelles_palettes']) ?></td></tr>
         <tr><th>Nouveaux chariots</th><td><?= $e($d['nouveaux_chariots']) ?></td></tr>

@@ -5,15 +5,12 @@ require_once __DIR__ . '/includes/functions.php';
 $pageTitle   = 'FPMS - Dashboard Palettes';
 $currentPage = 'dash_palettes';
 
-$p = stats_palettes($pdo);
+$periode = periode_valide($_GET['periode'] ?? null);
+$p       = stats_palettes($pdo);
+$evo     = palettes_evolution($pdo, $periode);
 $tauxConformite = pct($p['conforme'], $p['total']);
 
 $palettes = $pdo->query('SELECT * FROM palettes ORDER BY code')->fetchAll();
-
-// Top des palettes ayant le plus de réparations.
-$topRep = $pdo->query(
-    'SELECT code, nb_reparations FROM palettes WHERE nb_reparations > 0 ORDER BY nb_reparations DESC LIMIT 8'
-)->fetchAll();
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -48,21 +45,23 @@ require_once __DIR__ . '/includes/header.php';
         <div class="kpi-label">Nombre de lots</div>
         <div class="kpi-value"><?= $p['lots'] ?></div>
     </div>
-    <div class="kpi-card blue">
-        <div class="kpi-label">Total réparations</div>
-        <div class="kpi-value"><?= $p['reparations'] ?></div>
-    </div>
 </div>
 
 <div class="charts-grid">
     <div class="card"><h3>Quantité par état</h3><canvas id="chEtat"></canvas></div>
-    <div class="card"><h3>Réparations par palette</h3><canvas id="chRep"></canvas></div>
+    <div class="card">
+        <div class="card-head">
+            <h3>Palettes créées (quantité)</h3>
+            <?= periode_selector($periode) ?>
+        </div>
+        <canvas id="chEvo"></canvas>
+    </div>
 </div>
 
 <h3>Détail des palettes</h3>
 <table class="table">
     <thead>
-        <tr><th>Code</th><th>État</th><th>Quantité</th><th>Réparations</th><th>Commentaire</th></tr>
+        <tr><th>Code</th><th>État</th><th>Quantité</th><th>Commentaire</th></tr>
     </thead>
     <tbody>
         <?php foreach ($palettes as $pal): ?>
@@ -70,7 +69,6 @@ require_once __DIR__ . '/includes/header.php';
                 <td><strong><?= htmlspecialchars($pal['code']) ?></strong></td>
                 <td><span class="badge <?= etat_palette_badge($pal['etat']) ?>"><?= etat_palette_label($pal['etat']) ?></span></td>
                 <td><?= (int) $pal['quantite'] ?></td>
-                <td><?= (int) $pal['nb_reparations'] ?></td>
                 <td><?= htmlspecialchars($pal['commentaire'] ?? '') ?></td>
             </tr>
         <?php endforeach; ?>
@@ -80,15 +78,14 @@ require_once __DIR__ . '/includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/fpms/assets/charts.js"></script>
 <script>
-const COL = { green:'#2b8a3e', orange:'#f08c00', red:'#c92a2a', blue:'#1971c2' };
+const COL = { green:'#16a34a', orange:'#f59e0b', red:'#dc2626', blue:'#2563eb' };
 
 histogramme('chEtat', ['Conforme','Non conforme','Cassée'],
     [<?= $p['conforme'] ?>,<?= $p['non_conforme'] ?>,<?= $p['cassee'] ?>],
     [COL.green, COL.orange, COL.red], { titre: 'Quantité' });
 
-histogramme('chRep', <?= json_encode(array_column($topRep, 'code')) ?>,
-    <?= json_encode(array_map('intval', array_column($topRep, 'nb_reparations'))) ?>,
-    COL.blue, { titre: 'Réparations' });
+histogramme('chEvo', <?= json_encode(array_keys($evo)) ?>,
+    <?= json_encode(array_values($evo)) ?>, COL.blue, { titre: 'Quantité' });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

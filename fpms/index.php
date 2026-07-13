@@ -7,7 +7,6 @@ $currentPage = 'dashboard';
 
 $c = stats_chariots($pdo);
 $p = stats_palettes($pdo);
-$rep = reparations_par_jour($pdo, 14);
 
 $palettesConformes = $p['conforme'];
 
@@ -25,17 +24,13 @@ require_once __DIR__ . '/includes/header.php';
 
 <h3>Tableaux de bord</h3>
 <div class="charts-grid">
-    <a class="card" style="text-decoration:none;color:inherit;border-left:4px solid #2b8a3e" href="/fpms/dashboard_palettes.php">
+    <a class="card card-link accent-green" href="/fpms/dashboard_palettes.php">
         <h3>📦 Dashboard Palettes</h3>
-        <p class="hint">Quantités, conformité et réparations des palettes.</p>
+        <p class="hint">Quantités, conformité et évolution (jour / mois / année).</p>
     </a>
-    <a class="card" style="text-decoration:none;color:inherit;border-left:4px solid #1971c2" href="/fpms/dashboard_chariots.php">
+    <a class="card card-link accent-blue" href="/fpms/dashboard_chariots.php">
         <h3>🚜 Dashboard Chariots</h3>
-        <p class="hint">Disponibilité, répartition et temps d'arrêt.</p>
-    </a>
-    <a class="card" style="text-decoration:none;color:inherit;border-left:4px solid #f08c00" href="/fpms/dashboard_reparations.php">
-        <h3>🔧 Dashboard Réparations</h3>
-        <p class="hint">Taux de réussite et activité des réparations.</p>
+        <p class="hint">Disponibilité, temps d'arrêt et mises en service.</p>
     </a>
 </div>
 
@@ -83,13 +78,12 @@ require_once __DIR__ . '/includes/header.php';
 <div class="charts-grid">
     <div class="card"><h3>Chariots par type</h3><canvas id="chartType"></canvas></div>
     <div class="card"><h3>Palettes par état (quantité)</h3><canvas id="chartPalettes"></canvas></div>
-    <div class="card"><h3>Réparations / jour (14 j)</h3><canvas id="chartReparations"></canvas></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/fpms/assets/charts.js"></script>
 <script>
-const COL = { green:'#2b8a3e', orange:'#f08c00', red:'#c92a2a', blue:'#1971c2', purple:'#7048e8' };
+const COL = { green:'#16a34a', orange:'#f59e0b', red:'#dc2626', blue:'#2563eb', purple:'#7c3aed' };
 
 histogramme('chartType', ['Électrique', 'Diesel'],
     [<?= $c['electrique'] ?>, <?= $c['diesel'] ?>], [COL.purple, COL.orange], { titre: 'Chariots' });
@@ -97,10 +91,6 @@ histogramme('chartType', ['Électrique', 'Diesel'],
 histogramme('chartPalettes', ['Conforme', 'Non conforme', 'Cassée'],
     [<?= $p['conforme'] ?>, <?= $p['non_conforme'] ?>, <?= $p['cassee'] ?>],
     [COL.green, COL.orange, COL.red], { titre: 'Quantité' });
-
-histogramme('chartReparations',
-    <?= json_encode(array_map(fn($d) => date('d/m', strtotime($d)), array_keys($rep))) ?>,
-    <?= json_encode(array_values($rep)) ?>, COL.blue, { titre: 'Réparations' });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

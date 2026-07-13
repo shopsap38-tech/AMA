@@ -47,18 +47,6 @@ require_once __DIR__ . '/includes/header.php';
     <h3><?= htmlspecialchars($data['libelle']) ?></h3>
 
     <div class="kpi-grid">
-        <div class="kpi-card blue">
-            <div class="kpi-label">Réparations sur la période</div>
-            <div class="kpi-value"><?= $data['reparations_total'] ?></div>
-        </div>
-        <div class="kpi-card green">
-            <div class="kpi-label">Palettes réparées</div>
-            <div class="kpi-value"><?= $data['reparations_reparee'] ?></div>
-        </div>
-        <div class="kpi-card red">
-            <div class="kpi-label">Irréparables</div>
-            <div class="kpi-value"><?= $data['reparations_irrep'] ?></div>
-        </div>
         <div class="kpi-card orange">
             <div class="kpi-label">Changements d'état chariots</div>
             <div class="kpi-value"><?= $data['changements_etat'] ?></div>

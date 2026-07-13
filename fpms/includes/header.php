@@ -9,12 +9,10 @@ $navGroupes = [
     [
         'dash_palettes'     => ['dashboard_palettes.php',    'Dashboard Palettes'],
         'dash_chariots'     => ['dashboard_chariots.php',    'Dashboard Chariots'],
-        'dash_reparations'  => ['dashboard_reparations.php', 'Dashboard Réparations'],
     ],
     [
         'chariots'          => ['chariots.php',    'Chariots'],
         'palettes'          => ['palettes.php',    'Palettes'],
-        'reparations'       => ['reparations.php', 'Réparations'],
     ],
     [
         'rapports'          => ['rapports.php',     'Rapports'],

@@ -18,7 +18,6 @@ CREATE TABLE chariots (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     marque VARCHAR(100) NOT NULL,
-    modele VARCHAR(100) NOT NULL,
     type ENUM('electrique', 'diesel') NOT NULL,
     etat ENUM('disponible', 'maintenance', 'panne') NOT NULL DEFAULT 'disponible',
     date_mise_service DATE NULL,
@@ -45,33 +44,21 @@ CREATE TABLE palettes (
     code VARCHAR(50) NOT NULL UNIQUE,
     etat ENUM('conforme', 'non_conforme', 'cassee') NOT NULL DEFAULT 'conforme',
     quantite INT NOT NULL DEFAULT 1,
-    nb_reparations INT NOT NULL DEFAULT 0,
     commentaire VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Réparations des palettes (suivi détaillé des interventions)
-CREATE TABLE reparations (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    palette_id INT NOT NULL,
-    description VARCHAR(255) NULL,
-    resultat ENUM('reparee', 'irreparable') NOT NULL DEFAULT 'reparee',
-    date_reparation DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_rep_palette FOREIGN KEY (palette_id) REFERENCES palettes(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
 -- ---------------------------------------------------------------------------
 -- Jeu de données de démonstration
 -- ---------------------------------------------------------------------------
-INSERT INTO chariots (code, marque, modele, type, etat, date_mise_service) VALUES
-    ('CH-001', 'Toyota',       '8FBE20',  'electrique', 'disponible',  '2021-03-15'),
-    ('CH-002', 'Linde',        'E16',     'electrique', 'maintenance', '2020-06-01'),
-    ('CH-003', 'Still',        'RX60',    'electrique', 'disponible',  '2022-01-10'),
-    ('CH-004', 'Caterpillar',  'DP25N',   'diesel',     'disponible',  '2019-09-20'),
-    ('CH-005', 'Hyster',       'H2.5FT',  'diesel',     'panne',       '2018-11-05'),
-    ('CH-006', 'Jungheinrich', 'DFG425',  'diesel',     'disponible',  '2021-07-30');
+INSERT INTO chariots (code, marque, type, etat, date_mise_service) VALUES
+    ('CH-001', 'Toyota',       'electrique', 'disponible',  CURDATE() - INTERVAL 5 DAY),
+    ('CH-002', 'Linde',        'electrique', 'maintenance', CURDATE() - INTERVAL 20 DAY),
+    ('CH-003', 'Still',        'electrique', 'disponible',  CURDATE() - INTERVAL 2 MONTH),
+    ('CH-004', 'Caterpillar',  'diesel',     'disponible',  CURDATE() - INTERVAL 8 MONTH),
+    ('CH-005', 'Hyster',       'diesel',     'panne',       CURDATE() - INTERVAL 2 YEAR),
+    ('CH-006', 'Jungheinrich', 'diesel',     'disponible',  CURDATE() - INTERVAL 1 YEAR);
 
 INSERT INTO chariot_historique (chariot_id, ancien_etat, nouvel_etat, commentaire, date_evenement) VALUES
     (2, 'disponible', 'maintenance', 'Révision périodique',        NOW() - INTERVAL 2 DAY),
@@ -80,19 +67,12 @@ INSERT INTO chariot_historique (chariot_id, ancien_etat, nouvel_etat, commentair
     (5, 'maintenance','panne',       'Pièce manquante',            NOW() - INTERVAL 3 DAY),
     (1, 'maintenance','disponible',  'Retour de maintenance',      NOW() - INTERVAL 10 DAY);
 
-INSERT INTO palettes (code, etat, quantite, nb_reparations, commentaire) VALUES
-    ('PAL-0001', 'conforme',     40, 0, NULL),
-    ('PAL-0002', 'conforme',     35, 1, NULL),
-    ('PAL-0003', 'conforme',     28, 0, NULL),
-    ('PAL-0004', 'non_conforme', 12, 2, 'Planches fendues'),
-    ('PAL-0005', 'cassee',        8, 3, 'Dés cassés'),
-    ('PAL-0006', 'conforme',     22, 0, NULL),
-    ('PAL-0007', 'non_conforme', 15, 1, 'Clous saillants'),
-    ('PAL-0008', 'cassee',        6, 4, 'Semelles brisées');
-
-INSERT INTO reparations (palette_id, description, resultat, date_reparation) VALUES
-    (4, 'Remplacement planche', 'reparee',     CURDATE()),
-    (5, 'Remplacement dé',      'reparee',     CURDATE()),
-    (7, 'Retrait clou',         'reparee',     CURDATE() - INTERVAL 1 DAY),
-    (8, 'Semelle irréparable',  'irreparable', CURDATE() - INTERVAL 1 DAY),
-    (4, 'Contrôle qualité',     'reparee',     CURDATE() - INTERVAL 2 DAY);
+INSERT INTO palettes (code, etat, quantite, commentaire, created_at) VALUES
+    ('PAL-0001', 'conforme',     40, NULL,               CURDATE() - INTERVAL 1 DAY),
+    ('PAL-0002', 'conforme',     35, NULL,               CURDATE() - INTERVAL 3 DAY),
+    ('PAL-0003', 'conforme',     28, NULL,               CURDATE() - INTERVAL 10 DAY),
+    ('PAL-0004', 'non_conforme', 12, 'Planches fendues', CURDATE() - INTERVAL 1 MONTH),
+    ('PAL-0005', 'cassee',        8, 'Dés cassés',       CURDATE() - INTERVAL 2 MONTH),
+    ('PAL-0006', 'conforme',     22, NULL,               CURDATE() - INTERVAL 5 MONTH),
+    ('PAL-0007', 'non_conforme', 15, 'Clous saillants',  CURDATE() - INTERVAL 1 YEAR),
+    ('PAL-0008', 'cassee',        6, 'Semelles brisées', CURDATE() - INTERVAL 2 YEAR);

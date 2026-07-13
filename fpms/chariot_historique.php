@@ -30,7 +30,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="card" style="margin-bottom:1.5rem">
     <p style="margin:0">
-        <strong><?= htmlspecialchars($chariot['marque']) ?> <?= htmlspecialchars($chariot['modele']) ?></strong>
+        <strong><?= htmlspecialchars($chariot['marque']) ?></strong>
         &middot; <?= $chariot['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?>
         &middot; État actuel :
         <span class="badge <?= etat_chariot_badge($chariot['etat']) ?>"><?= etat_chariot_label($chariot['etat']) ?></span>

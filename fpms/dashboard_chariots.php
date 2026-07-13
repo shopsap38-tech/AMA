@@ -5,8 +5,10 @@ require_once __DIR__ . '/includes/functions.php';
 $pageTitle   = 'FPMS - Dashboard Chariots';
 $currentPage = 'dash_chariots';
 
-$c     = stats_chariots($pdo);
-$arret = temps_arret_par_chariot($pdo);
+$periode = periode_valide($_GET['periode'] ?? null);
+$c       = stats_chariots($pdo);
+$arret   = temps_arret_par_chariot($pdo);
+$evo     = chariots_evolution($pdo, $periode);
 
 $chariots = $pdo->query('SELECT * FROM chariots ORDER BY code')->fetchAll();
 
@@ -45,18 +47,25 @@ require_once __DIR__ . '/includes/header.php';
     <div class="card"><h3>Répartition par état</h3><canvas id="chEtat"></canvas></div>
     <div class="card"><h3>Répartition par type</h3><canvas id="chType"></canvas></div>
     <div class="card"><h3>Temps d'arrêt par chariot (h)</h3><canvas id="chArret"></canvas></div>
+    <div class="card">
+        <div class="card-head">
+            <h3>Chariots mis en service</h3>
+            <?= periode_selector($periode) ?>
+        </div>
+        <canvas id="chEvo"></canvas>
+    </div>
 </div>
 
 <h3>Détail de la flotte</h3>
 <table class="table">
     <thead>
-        <tr><th>Code</th><th>Marque / Modèle</th><th>Type</th><th>État</th><th>Mise en service</th></tr>
+        <tr><th>Code</th><th>Marque</th><th>Type</th><th>État</th><th>Mise en service</th></tr>
     </thead>
     <tbody>
         <?php foreach ($chariots as $ch): ?>
             <tr class="<?= $ch['etat'] === 'panne' ? 'row-alert' : '' ?>">
                 <td><strong><?= htmlspecialchars($ch['code']) ?></strong></td>
-                <td><?= htmlspecialchars($ch['marque'] . ' ' . $ch['modele']) ?></td>
+                <td><?= htmlspecialchars($ch['marque']) ?></td>
                 <td><?= $ch['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?></td>
                 <td><span class="badge <?= etat_chariot_badge($ch['etat']) ?>"><?= etat_chariot_label($ch['etat']) ?></span></td>
                 <td><?= $ch['date_mise_service'] ? date('d/m/Y', strtotime($ch['date_mise_service'])) : '—' ?></td>
@@ -68,7 +77,7 @@ require_once __DIR__ . '/includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/fpms/assets/charts.js"></script>
 <script>
-const COL = { green:'#2b8a3e', orange:'#f08c00', red:'#c92a2a', blue:'#1971c2', purple:'#7048e8' };
+const COL = { green:'#16a34a', orange:'#f59e0b', red:'#dc2626', blue:'#2563eb', purple:'#7c3aed' };
 
 histogramme('chEtat', ['Disponible','Maintenance','Panne'],
     [<?= $c['disponible'] ?>,<?= $c['maintenance'] ?>,<?= $c['panne'] ?>],
@@ -79,6 +88,9 @@ histogramme('chType', ['Électrique','Diesel'],
 
 histogramme('chArret', <?= json_encode(array_column($arret, 'code')) ?>,
     <?= json_encode(array_column($arret, 'heures')) ?>, COL.red, { titre: 'Heures' });
+
+histogramme('chEvo', <?= json_encode(array_keys($evo)) ?>,
+    <?= json_encode(array_values($evo)) ?>, COL.blue, { titre: 'Chariots' });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

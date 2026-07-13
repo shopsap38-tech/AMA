@@ -11,8 +11,7 @@ $code        = trim($_POST['code'] ?? '');
 $etat        = $_POST['etat'] ?? '';
 $commentaire = trim($_POST['commentaire'] ?? '');
 $commentaire = $commentaire !== '' ? $commentaire : null;
-$quantite     = max(0, (int) ($_POST['quantite'] ?? 1));
-$nbReparations = max(0, (int) ($_POST['nb_reparations'] ?? 0));
+$quantite = max(0, (int) ($_POST['quantite'] ?? 1));
 
 if ($code === '' || !in_array($etat, ['conforme', 'non_conforme', 'cassee'], true)) {
     $back = $id ? "?id=$id" : '';
@@ -22,12 +21,12 @@ if ($code === '' || !in_array($etat, ['conforme', 'non_conforme', 'cassee'], tru
 
 try {
     if ($id > 0) {
-        $stmt = $pdo->prepare('UPDATE palettes SET code = ?, etat = ?, quantite = ?, nb_reparations = ?, commentaire = ? WHERE id = ?');
-        $stmt->execute([$code, $etat, $quantite, $nbReparations, $commentaire, $id]);
+        $stmt = $pdo->prepare('UPDATE palettes SET code = ?, etat = ?, quantite = ?, commentaire = ? WHERE id = ?');
+        $stmt->execute([$code, $etat, $quantite, $commentaire, $id]);
         $msg = 'Palette mise à jour.';
     } else {
-        $stmt = $pdo->prepare('INSERT INTO palettes (code, etat, quantite, nb_reparations, commentaire) VALUES (?, ?, ?, ?, ?)');
-        $stmt->execute([$code, $etat, $quantite, $nbReparations, $commentaire]);
+        $stmt = $pdo->prepare('INSERT INTO palettes (code, etat, quantite, commentaire) VALUES (?, ?, ?, ?)');
+        $stmt->execute([$code, $etat, $quantite, $commentaire]);
         $msg = 'Palette ajoutée.';
     }
 } catch (PDOException $e) {
