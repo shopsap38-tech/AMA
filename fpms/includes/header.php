@@ -1,14 +1,27 @@
 <?php
 if (!isset($pageTitle)) { $pageTitle = 'FPMS'; }
 $currentPage = $currentPage ?? '';
-$nav = [
-    'dashboard'    => ['index.php',         'Tableau de bord'],
-    'chariots'     => ['chariots.php',      'Chariots'],
-    'palettes'     => ['palettes.php',      'Palettes'],
-    'reparations'  => ['reparations.php',   'Réparations'],
-    'rapports'     => ['rapports.php',      'Rapports'],
-    'alertes'      => ['alertes.php',       'Alertes'],
-    'statistiques' => ['statistiques.php',  'Statistiques'],
+// Navigation groupée : accueil, dashboards, gestion, analyses.
+$navGroupes = [
+    [
+        'dashboard'         => ['index.php',               'Accueil'],
+    ],
+    [
+        'dash_palettes'     => ['dashboard_palettes.php',    'Dashboard Palettes'],
+        'dash_chariots'     => ['dashboard_chariots.php',    'Dashboard Chariots'],
+        'dash_reparations'  => ['dashboard_reparations.php', 'Dashboard Réparations'],
+    ],
+    [
+        'chariots'          => ['chariots.php',    'Chariots'],
+        'palettes'          => ['palettes.php',    'Palettes'],
+        'reparations'       => ['reparations.php', 'Réparations'],
+        'employes'          => ['employes.php',    'Employés'],
+    ],
+    [
+        'rapports'          => ['rapports.php',     'Rapports'],
+        'alertes'           => ['alertes.php',      'Alertes'],
+        'statistiques'      => ['statistiques.php', 'Statistiques'],
+    ],
 ];
 ?>
 <!DOCTYPE html>
@@ -23,8 +36,11 @@ $nav = [
     <header class="topbar">
         <h1><a href="/fpms/index.php">FPMS<span class="topbar-sub">Fleet &amp; Pallet Management</span></a></h1>
         <nav>
-            <?php foreach ($nav as $key => [$url, $label]): ?>
-                <a href="/fpms/<?= $url ?>" class="<?= $currentPage === $key ? 'active' : '' ?>"><?= $label ?></a>
+            <?php foreach ($navGroupes as $i => $groupe): ?>
+                <?php if ($i > 0): ?><span class="nav-sep"></span><?php endif; ?>
+                <?php foreach ($groupe as $key => [$url, $label]): ?>
+                    <a href="/fpms/<?= $url ?>" class="<?= $currentPage === $key ? 'active' : '' ?>"><?= $label ?></a>
+                <?php endforeach; ?>
             <?php endforeach; ?>
         </nav>
     </header>

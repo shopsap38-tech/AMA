@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/functions.php';
 
 $pageTitle   = 'FPMS - Fiche palette';
 $currentPage = 'palettes';
 
-$palette = ['id' => '', 'code' => '', 'etat' => 'conforme', 'commentaire' => ''];
+$palette = ['id' => '', 'code' => '', 'etat' => 'conforme', 'commentaire' => '', 'controleur_id' => ''];
+$employes = employes_actifs($pdo);
 
 if (isset($_GET['id'])) {
     $stmt = $pdo->prepare('SELECT * FROM palettes WHERE id = ?');
@@ -37,6 +39,17 @@ require_once __DIR__ . '/includes/header.php';
             <option value="conforme" <?= $palette['etat'] === 'conforme' ? 'selected' : '' ?>>Conforme</option>
             <option value="non_conforme" <?= $palette['etat'] === 'non_conforme' ? 'selected' : '' ?>>Non conforme</option>
             <option value="cassee" <?= $palette['etat'] === 'cassee' ? 'selected' : '' ?>>Cassée</option>
+        </select>
+    </label>
+
+    <label>Contrôleur
+        <select name="controleur_id">
+            <option value="">— Aucun —</option>
+            <?php foreach ($employes as $emp): ?>
+                <option value="<?= (int) $emp['id'] ?>" <?= (int) $palette['controleur_id'] === (int) $emp['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($emp['prenom'] . ' ' . $emp['nom']) ?> — <?= type_employe_label($emp['type']) ?>
+                </option>
+            <?php endforeach; ?>
         </select>
     </label>
 

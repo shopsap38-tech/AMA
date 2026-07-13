@@ -8,7 +8,9 @@ $currentPage = 'chariots';
 $chariot = [
     'id' => '', 'code' => '', 'marque' => '', 'modele' => '',
     'type' => 'electrique', 'etat' => 'disponible', 'date_mise_service' => '',
+    'operateur_id' => '',
 ];
+$employes = employes_actifs($pdo);
 
 if (isset($_GET['id'])) {
     $stmt = $pdo->prepare('SELECT * FROM chariots WHERE id = ?');
@@ -61,6 +63,17 @@ require_once __DIR__ . '/includes/header.php';
     <?php if ($isEdit): ?>
         <p class="hint">Tout changement d'état sera enregistré dans l'historique.</p>
     <?php endif; ?>
+
+    <label>Opérateur affecté
+        <select name="operateur_id">
+            <option value="">— Aucun —</option>
+            <?php foreach ($employes as $emp): ?>
+                <option value="<?= (int) $emp['id'] ?>" <?= (int) $chariot['operateur_id'] === (int) $emp['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($emp['prenom'] . ' ' . $emp['nom']) ?> — <?= type_employe_label($emp['type']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </label>
 
     <label>Date de mise en service
         <input type="date" name="date_mise_service" value="<?= htmlspecialchars($chariot['date_mise_service'] ?? '') ?>">

@@ -14,6 +14,8 @@ $type   = $_POST['type'] ?? '';
 $etat   = $_POST['etat'] ?? '';
 $dateMS = $_POST['date_mise_service'] ?? '';
 $dateMS = $dateMS !== '' ? $dateMS : null;
+$operateurId = (int) ($_POST['operateur_id'] ?? 0);
+$operateurId = $operateurId > 0 ? $operateurId : null;
 
 if ($code === '' || $marque === '' || $modele === ''
     || !in_array($type, ['electrique', 'diesel'], true)
@@ -32,10 +34,10 @@ try {
 
         $stmt = $pdo->prepare(
             'UPDATE chariots
-                SET code = ?, marque = ?, modele = ?, type = ?, etat = ?, date_mise_service = ?
+                SET code = ?, marque = ?, modele = ?, type = ?, etat = ?, operateur_id = ?, date_mise_service = ?
               WHERE id = ?'
         );
-        $stmt->execute([$code, $marque, $modele, $type, $etat, $dateMS, $id]);
+        $stmt->execute([$code, $marque, $modele, $type, $etat, $operateurId, $dateMS, $id]);
 
         if ($ancienEtat !== false && $ancienEtat !== $etat) {
             $h = $pdo->prepare(
@@ -47,10 +49,10 @@ try {
         $msg = 'Chariot mis à jour.';
     } else {
         $stmt = $pdo->prepare(
-            'INSERT INTO chariots (code, marque, modele, type, etat, date_mise_service)
-             VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO chariots (code, marque, modele, type, etat, operateur_id, date_mise_service)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$code, $marque, $modele, $type, $etat, $dateMS]);
+        $stmt->execute([$code, $marque, $modele, $type, $etat, $operateurId, $dateMS]);
         $newId = (int) $pdo->lastInsertId();
 
         $h = $pdo->prepare(

@@ -23,6 +23,22 @@ require_once __DIR__ . '/includes/header.php';
     </p>
 <?php endif; ?>
 
+<h3>Tableaux de bord</h3>
+<div class="charts-grid">
+    <a class="card" style="text-decoration:none;color:inherit;border-left:4px solid #2b8a3e" href="/fpms/dashboard_palettes.php">
+        <h3>📦 Dashboard Palettes</h3>
+        <p class="hint">Conformité, états et contrôleurs (permanents / journaliers).</p>
+    </a>
+    <a class="card" style="text-decoration:none;color:inherit;border-left:4px solid #1971c2" href="/fpms/dashboard_chariots.php">
+        <h3>🚜 Dashboard Chariots</h3>
+        <p class="hint">Disponibilité, temps d'arrêt et opérateurs affectés.</p>
+    </a>
+    <a class="card" style="text-decoration:none;color:inherit;border-left:4px solid #f08c00" href="/fpms/dashboard_reparations.php">
+        <h3>🔧 Dashboard Réparations</h3>
+        <p class="hint">Taux de réussite et performance par type d'employé.</p>
+    </a>
+</div>
+
 <h3>KPI en temps réel</h3>
 <div class="kpi-grid">
     <div class="kpi-card">

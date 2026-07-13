@@ -63,6 +63,48 @@ body {
     border-bottom-color: #4dabf7;
 }
 
+.nav-sep {
+    width: 1px;
+    align-self: stretch;
+    background: #3e4c59;
+    margin: 0 0.25rem;
+}
+
+/* Bandeau de type d'employé */
+.emp-tag {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.emp-permanent  { background: #d0ebff; color: #1971c2; }
+.emp-journalier { background: #ffe8cc; color: #d9480f; }
+
+/* Barre de progression (indicateurs %) */
+.progress {
+    background: #e4e7eb;
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    margin-top: 0.35rem;
+}
+.progress > span {
+    display: block;
+    height: 100%;
+    background: #2b8a3e;
+    border-radius: 999px;
+}
+.progress.warn > span { background: #f08c00; }
+.progress.danger > span { background: #c92a2a; }
+
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+@media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
 /* --- Mise en page --- */
 .container {
     width: 100%;

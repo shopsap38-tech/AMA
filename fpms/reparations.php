@@ -10,6 +10,7 @@ $palettes = $pdo->query(
     "SELECT id, code, etat FROM palettes WHERE etat IN ('non_conforme','cassee') ORDER BY code"
 )->fetchAll();
 $paletteSel = (int) ($_GET['palette_id'] ?? 0);
+$employes = employes_actifs($pdo);
 
 $reparations = $pdo->query(
     'SELECT r.*, p.code AS palette_code
@@ -46,6 +47,16 @@ require_once __DIR__ . '/includes/header.php';
                     <?php foreach ($palettes as $pal): ?>
                         <option value="<?= (int) $pal['id'] ?>" <?= $paletteSel === (int) $pal['id'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($pal['code']) ?> (<?= etat_palette_label($pal['etat']) ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label>Réparateur
+                <select name="employe_id">
+                    <option value="">— Aucun —</option>
+                    <?php foreach ($employes as $emp): ?>
+                        <option value="<?= (int) $emp['id'] ?>">
+                            <?= htmlspecialchars($emp['prenom'] . ' ' . $emp['nom']) ?> — <?= type_employe_label($emp['type']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
