@@ -1,18 +1,14 @@
 <?php
 if (!isset($pageTitle)) { $pageTitle = 'FPMS'; }
 $currentPage = $currentPage ?? '';
-// Navigation groupée : accueil, dashboards, gestion, analyses.
+// Navigation groupée : accueil, gestion, analyses.
 $navGroupes = [
     [
-        'dashboard'         => ['index.php',               'Accueil'],
+        'dashboard'         => ['index.php',        'Accueil'],
     ],
     [
-        'dash_palettes'     => ['dashboard_palettes.php',    'Dashboard Palettes'],
-        'dash_chariots'     => ['dashboard_chariots.php',    'Dashboard Chariots'],
-    ],
-    [
-        'chariots'          => ['chariots.php',    'Chariots'],
-        'palettes'          => ['palettes.php',    'Palettes'],
+        'chariots'          => ['chariots.php',     'Chariots'],
+        'palettes'          => ['palettes.php',     'Palettes'],
     ],
     [
         'rapports'          => ['rapports.php',     'Rapports'],

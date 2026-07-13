@@ -7,30 +7,27 @@ Application **PHP + MySQL** de gestion de flotte de chariots et de palettes.
 ### 🏠 Accueil
 - KPI en temps réel : total chariots, chariots électriques / diesel, disponibles,
   en maintenance, en panne, palettes conformes / non conformes, taux de disponibilité.
-- Graphiques interactifs et accès direct aux deux tableaux de bord spécialisés.
+- Accès rapide aux modules Chariots et Palettes.
 
-### 📊 Deux tableaux de bord spécialisés
-Chaque dashboard combine **KPI en pourcentage (%)**, **tableaux de données structurés**
-et des **graphiques présentés sous forme d'histogrammes (colonnes), avec le pourcentage
-affiché au-dessus de chaque colonne** :
-- **Dashboard Palettes** : quantités et conformité par état, évolution des palettes créées.
-- **Dashboard Chariots** : répartition par état et par type, temps d'arrêt, mises en service,
-  et **répartition des chariots par unité** (Liquide, Sachet, Transfert, MP, Chargement,
-  Papier, Retour, Déchet) avec graphique et pourcentages, plus un tableau détaillé.
-
-Les dashboards **Palettes** et **Chariots**, ainsi que les listes **Palettes** et
-**Chariots**, proposent un **histogramme d'évolution avec un sélecteur Jour / Mois / Année**.
-
-> Les graphiques sont des histogrammes agrandis et lisibles ; le pourcentage est affiché
+> Les graphiques sont des histogrammes agrandis et lisibles ; **le nombre** est affiché
 > au-dessus de chaque colonne (plugin `assets/charts.js`).
 
 ### 🚜 Gestion des chariots
-- Fiche : code chariot, marque, type (Électrique / Diesel), état et **unité**.
-- Filtres par type et par état.
-- Historique complet des changements d'état de chaque chariot.
+Le module Chariots regroupe le tableau de bord et la gestion :
+- KPI (total, disponibles, maintenance, panne, électriques / diesel).
+- Graphiques (histogrammes, nombre au-dessus des colonnes) : nombre de chariots par état,
+  par type, temps d'arrêt par chariot, chariots mis en service (**évolution Jour / Mois / Année**).
+- **Répartition des chariots par unité** (Liquide, Sachet, Transfert, MP, Chargement,
+  Papier, Retour, Déchet) : graphique + tableau (nombre et pourcentage).
+- Fiche : code, marque, type (Électrique / Diesel), état, **unité** et **date de mise en service**.
+- Filtres, historique des changements d'état.
 
 ### 📦 Gestion des palettes
-- Palettes conformes, non conformes et cassées, avec **quantité par lot**.
+Le module Palettes regroupe le tableau de bord et la gestion :
+- KPI par état (conformes / non conformes / cassées) et quantité totale.
+- Graphiques (histogrammes, nombre au-dessus des colonnes) : nombre de palettes par état,
+  palettes créées (**évolution Jour / Mois / Année**).
+- Fiche : code, état, **quantité par lot**, **date d'enregistrement** (modifiable) et commentaire.
 - Les indicateurs additionnent les quantités (une ligne = un lot de N palettes).
 
 ### 📊 Rapports
@@ -77,15 +74,13 @@ fpms/
 │   ├── header.php            En-tête + navigation groupée
 │   ├── footer.php            Pied de page
 │   └── functions.php         Requêtes statistiques partagées
-├── index.php                 Accueil (KPI + graphiques + accès dashboards)
-├── dashboard_palettes.php    Tableau de bord des palettes (+ évolution jour/mois/année)
-├── dashboard_chariots.php    Tableau de bord des chariots (+ évolution jour/mois/année)
-├── chariots.php              Liste des chariots + filtres + évolution
+├── index.php                 Accueil (KPI + accès rapide)
+├── chariots.php              Chariots : dashboard + gestion (KPI, graphiques, unité, liste)
 ├── chariot_form.php          Fiche chariot (ajout / modification)
 ├── chariot_save.php          Traitement de la fiche chariot
 ├── chariot_delete.php        Suppression d'un chariot
 ├── chariot_historique.php    Historique d'un chariot
-├── palettes.php              Liste des palettes + filtres + évolution
+├── palettes.php              Palettes : dashboard + gestion (KPI, graphiques, liste)
 ├── palette_form.php          Fiche palette (ajout / modification)
 ├── palette_save.php          Traitement de la fiche palette
 ├── palette_delete.php        Suppression d'une palette

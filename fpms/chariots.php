@@ -29,7 +29,11 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $chariots = $stmt->fetchAll();
 
-$evo = chariots_evolution($pdo, $periode);
+$c        = stats_chariots($pdo);
+$arret    = temps_arret_par_chariot($pdo);
+$evo      = chariots_evolution($pdo, $periode);
+$unites   = unites();
+$parUnite = chariots_par_unite($pdo);
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -43,14 +47,69 @@ require_once __DIR__ . '/includes/header.php';
     <p class="alert alert-success"><?= htmlspecialchars($_GET['success']) ?></p>
 <?php endif; ?>
 
-<div class="card" style="margin-bottom:1.5rem">
-    <div class="card-head">
-        <h3>Chariots mis en service</h3>
-        <?= periode_selector($periode) ?>
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-label">Total chariots</div>
+        <div class="kpi-value"><?= $c['total'] ?></div>
     </div>
-    <canvas id="chEvo"></canvas>
+    <div class="kpi-card green">
+        <div class="kpi-label">Disponibles</div>
+        <div class="kpi-value"><?= $c['disponible'] ?></div>
+    </div>
+    <div class="kpi-card orange">
+        <div class="kpi-label">En maintenance</div>
+        <div class="kpi-value"><?= $c['maintenance'] ?></div>
+    </div>
+    <div class="kpi-card red">
+        <div class="kpi-label">En panne</div>
+        <div class="kpi-value"><?= $c['panne'] ?></div>
+    </div>
+    <div class="kpi-card purple">
+        <div class="kpi-label">Électriques / Diesel</div>
+        <div class="kpi-value"><?= $c['electrique'] ?> / <?= $c['diesel'] ?></div>
+    </div>
 </div>
 
+<div class="charts-grid">
+    <div class="card"><h3>Nombre de chariots par état</h3><canvas id="chEtat"></canvas></div>
+    <div class="card"><h3>Nombre de chariots par type</h3><canvas id="chType"></canvas></div>
+    <div class="card"><h3>Temps d'arrêt par chariot (h)</h3><canvas id="chArret"></canvas></div>
+    <div class="card">
+        <div class="card-head">
+            <h3>Chariots mis en service</h3>
+            <?= periode_selector($periode) ?>
+        </div>
+        <canvas id="chEvo"></canvas>
+    </div>
+</div>
+
+<h3>Répartition des chariots par unité</h3>
+<div class="card card-chart">
+    <h3>Nombre de chariots par unité</h3>
+    <canvas id="chUnite"></canvas>
+</div>
+
+<table class="table" style="margin-bottom:2rem">
+    <thead>
+        <tr><th>Unité</th><th>Nombre de chariots</th><th>Pourcentage</th></tr>
+    </thead>
+    <tbody>
+        <?php foreach ($unites as $key => $label): $n = $parUnite['data'][$key]; ?>
+            <tr>
+                <td><strong><?= htmlspecialchars($label) ?></strong></td>
+                <td><?= $n ?></td>
+                <td><?= pct($n, $parUnite['total']) ?> %</td>
+            </tr>
+        <?php endforeach; ?>
+        <tr>
+            <td><strong>Total (affectés)</strong></td>
+            <td><strong><?= $parUnite['total'] ?></strong></td>
+            <td>100 %</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Liste des chariots</h3>
 <form class="filters" method="get">
     <input type="hidden" name="periode" value="<?= htmlspecialchars($periode) ?>">
     <label>Type
@@ -109,8 +168,25 @@ require_once __DIR__ . '/includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/fpms/assets/charts.js"></script>
 <script>
+const COL = { green:'#16a34a', orange:'#f59e0b', red:'#dc2626', blue:'#2563eb', purple:'#7c3aed' };
+
+histogramme('chEtat', ['Disponible','Maintenance','Panne'],
+    [<?= $c['disponible'] ?>,<?= $c['maintenance'] ?>,<?= $c['panne'] ?>],
+    [COL.green, COL.orange, COL.red], { titre: 'Chariots' });
+
+histogramme('chType', ['Électrique','Diesel'],
+    [<?= $c['electrique'] ?>,<?= $c['diesel'] ?>], [COL.purple, COL.orange], { titre: 'Chariots' });
+
+histogramme('chArret', <?= json_encode(array_column($arret, 'code')) ?>,
+    <?= json_encode(array_column($arret, 'heures')) ?>, COL.red, { titre: 'Heures' });
+
 histogramme('chEvo', <?= json_encode(array_keys($evo)) ?>,
-    <?= json_encode(array_values($evo)) ?>, '#2563eb', { titre: 'Chariots' });
+    <?= json_encode(array_values($evo)) ?>, COL.blue, { titre: 'Chariots' });
+
+const UNITE_COL = ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2','#db2777','#65a30d'];
+histogramme('chUnite', <?= json_encode(array_values($unites)) ?>,
+    <?= json_encode(array_values($parUnite['data'])) ?>, UNITE_COL,
+    { titre: 'Chariots', aspectRatio: 3.4 });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -22,15 +22,15 @@ require_once __DIR__ . '/includes/header.php';
     </p>
 <?php endif; ?>
 
-<h3>Tableaux de bord</h3>
+<h3>Accès rapide</h3>
 <div class="charts-grid">
-    <a class="card card-link accent-green" href="/fpms/dashboard_palettes.php">
-        <h3>📦 Dashboard Palettes</h3>
-        <p class="hint">Quantités, conformité et évolution (jour / mois / année).</p>
+    <a class="card card-link accent-green" href="/fpms/palettes.php">
+        <h3>📦 Gestion des palettes</h3>
+        <p class="hint">Quantités, conformité, évolution et saisie des palettes.</p>
     </a>
-    <a class="card card-link accent-blue" href="/fpms/dashboard_chariots.php">
-        <h3>🚜 Dashboard Chariots</h3>
-        <p class="hint">Disponibilité, temps d'arrêt et mises en service.</p>
+    <a class="card card-link accent-blue" href="/fpms/chariots.php">
+        <h3>🚜 Gestion des chariots</h3>
+        <p class="hint">Disponibilité, temps d'arrêt, répartition par unité et saisie.</p>
     </a>
 </div>
 

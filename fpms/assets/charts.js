@@ -1,7 +1,6 @@
 /**
- * Plugin Chart.js : affiche le pourcentage au-dessus (ou à droite) de chaque
- * colonne d'un histogramme. Le pourcentage est calculé par rapport à la somme
- * des valeurs du même jeu de données (dataset).
+ * Plugin Chart.js : affiche le nombre (valeur) au-dessus (ou à droite) de chaque
+ * colonne d'un histogramme.
  *
  * Nécessite Chart.js chargé au préalable. S'enregistre globalement et ne
  * s'applique qu'aux graphiques de type "bar".
@@ -17,8 +16,8 @@
     Chart.defaults.layout = Chart.defaults.layout || {};
     Chart.defaults.layout.padding = { top: 28, right: 48 };
 
-    const PercentLabels = {
-        id: 'percentLabels',
+    const ValueLabels = {
+        id: 'valueLabels',
         afterDatasetsDraw(chart) {
             const ctx = chart.ctx;
             const horizontal = chart.options.indexAxis === 'y';
@@ -30,14 +29,10 @@
                 const meta = chart.getDatasetMeta(di);
                 if (meta.hidden || meta.type !== 'bar') { return; }
 
-                const somme = ds.data.reduce((a, b) => a + (Number(b) || 0), 0);
-                if (somme <= 0) { return; }
-
                 meta.data.forEach((bar, i) => {
                     const val = Number(ds.data[i]) || 0;
                     if (val === 0) { return; } // pas d'étiquette sur les colonnes vides
-                    const p = Math.round((val / somme) * 1000) / 10; // 1 décimale
-                    const label = p + ' %';
+                    const label = Number.isInteger(val) ? String(val) : String(Math.round(val * 10) / 10);
 
                     if (horizontal) {
                         ctx.textAlign = 'left';
@@ -54,7 +49,7 @@
         }
     };
 
-    Chart.register(PercentLabels);
+    Chart.register(ValueLabels);
 
     /**
      * Raccourci pour créer un histogramme (colonnes) avec % au-dessus des barres.

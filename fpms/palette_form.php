@@ -4,7 +4,7 @@ require_once __DIR__ . '/config/database.php';
 $pageTitle   = 'FPMS - Fiche palette';
 $currentPage = 'palettes';
 
-$palette = ['id' => '', 'code' => '', 'etat' => 'conforme', 'quantite' => 1, 'commentaire' => ''];
+$palette = ['id' => '', 'code' => '', 'etat' => 'conforme', 'quantite' => 1, 'commentaire' => '', 'date' => date('Y-m-d')];
 
 if (isset($_GET['id'])) {
     $stmt = $pdo->prepare('SELECT * FROM palettes WHERE id = ?');
@@ -12,6 +12,7 @@ if (isset($_GET['id'])) {
     $row = $stmt->fetch();
     if ($row) {
         $palette = $row;
+        $palette['date'] = !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : date('Y-m-d');
     }
 }
 
@@ -43,6 +44,11 @@ require_once __DIR__ . '/includes/header.php';
     <label>Quantité *
         <input type="number" name="quantite" min="0" required value="<?= (int) $palette['quantite'] ?>">
         <span class="hint">Nombre de palettes dans ce lot.</span>
+    </label>
+
+    <label>Date *
+        <input type="date" name="date" required value="<?= htmlspecialchars($palette['date']) ?>">
+        <span class="hint">Date d'enregistrement (utilisée dans l'évolution).</span>
     </label>
 
     <label>Commentaire

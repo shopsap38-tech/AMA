@@ -53,12 +53,18 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<div class="card" style="margin-bottom:1.5rem">
-    <div class="card-head">
-        <h3>Palettes créées (quantité)</h3>
-        <?= periode_selector($periode) ?>
+<div class="charts-grid">
+    <div class="card">
+        <h3>Nombre de palettes par état</h3>
+        <canvas id="chEtat"></canvas>
     </div>
-    <canvas id="chEvo"></canvas>
+    <div class="card">
+        <div class="card-head">
+            <h3>Palettes créées (quantité)</h3>
+            <?= periode_selector($periode) ?>
+        </div>
+        <canvas id="chEvo"></canvas>
+    </div>
 </div>
 
 <form class="filters" method="get">
@@ -107,8 +113,14 @@ require_once __DIR__ . '/includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/fpms/assets/charts.js"></script>
 <script>
+const COL = { green:'#16a34a', orange:'#f59e0b', red:'#dc2626', blue:'#2563eb' };
+
+histogramme('chEtat', ['Conforme','Non conforme','Cassée'],
+    [<?= $p['conforme'] ?>,<?= $p['non_conforme'] ?>,<?= $p['cassee'] ?>],
+    [COL.green, COL.orange, COL.red], { titre: 'Quantité' });
+
 histogramme('chEvo', <?= json_encode(array_keys($evo)) ?>,
-    <?= json_encode(array_values($evo)) ?>, '#2563eb', { titre: 'Quantité' });
+    <?= json_encode(array_values($evo)) ?>, COL.blue, { titre: 'Quantité' });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
