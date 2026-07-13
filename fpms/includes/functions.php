@@ -256,7 +256,7 @@ function periode_selector(string $active): string
  */
 function temps_arret_par_chariot(PDO $pdo): array
 {
-    $chariots = $pdo->query('SELECT id, marque, etat FROM chariots ORDER BY id')->fetchAll();
+    $chariots = $pdo->query('SELECT id, etat FROM chariots ORDER BY id')->fetchAll();
 
     $histStmt = $pdo->query(
         'SELECT chariot_id, nouvel_etat, date_evenement

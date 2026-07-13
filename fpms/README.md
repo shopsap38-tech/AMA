@@ -19,7 +19,7 @@ Le module Chariots regroupe le tableau de bord et la gestion :
   par type, temps d'arrêt par chariot, chariots mis en service (**évolution Jour / Mois / Année**).
 - **Répartition des chariots par unité** (Liquide, Sachet, Transfert, MP, Chargement,
   Papier, Retour, Déchet) : graphique + tableau (nombre et pourcentage).
-- Fiche : marque, type (Électrique / Diesel), état, **unité** et **date de mise en service**.
+- Fiche : type (Électrique / Diesel), état, **unité** et **date de mise en service**.
 - Filtres, historique des changements d'état. (Chaque chariot est identifié par une réf. `#id`.)
 
 ### 📦 Gestion des palettes
@@ -27,7 +27,7 @@ Le module Palettes regroupe le tableau de bord et la gestion :
 - KPI par état (conformes / non conformes / cassées) et quantité totale.
 - Graphique **« Nombre de palettes par état »** : histogramme **empilé dans le temps**
   (conformes / non conformes / cassées) avec sélecteur **Jour / Mois / Année**.
-- Fiche : état, **quantité par lot**, **date** (modifiable) et commentaire.
+- Fiche : état, **quantité par lot** et **date** (modifiable).
 - Les indicateurs additionnent les quantités (une ligne = un lot de N palettes).
   (Chaque palette est identifiée par une réf. `#id`.)
 

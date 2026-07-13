@@ -26,12 +26,12 @@ $historique = $h->fetchAll();
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<h2>Historique — #<?= (int) $chariot['id'] ?> <?= htmlspecialchars($chariot['marque']) ?></h2>
+<h2>Historique — chariot #<?= (int) $chariot['id'] ?></h2>
 
 <div class="card" style="margin-bottom:1.5rem">
     <p style="margin:0">
-        <strong><?= htmlspecialchars($chariot['marque']) ?></strong>
-        &middot; <?= $chariot['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?>
+        <strong><?= $chariot['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?></strong>
+        &middot; Unité : <?= htmlspecialchars(unite_label($chariot['unite'])) ?>
         &middot; État actuel :
         <span class="badge <?= etat_chariot_badge($chariot['etat']) ?>"><?= etat_chariot_label($chariot['etat']) ?></span>
     </p>
@@ -43,19 +43,17 @@ require_once __DIR__ . '/includes/header.php';
             <th>Date</th>
             <th>Ancien état</th>
             <th>Nouvel état</th>
-            <th>Commentaire</th>
         </tr>
     </thead>
     <tbody>
         <?php if (empty($historique)): ?>
-            <tr><td colspan="4">Aucun événement enregistré.</td></tr>
+            <tr><td colspan="3">Aucun événement enregistré.</td></tr>
         <?php endif; ?>
         <?php foreach ($historique as $evt): ?>
             <tr>
                 <td><?= date('d/m/Y H:i', strtotime($evt['date_evenement'])) ?></td>
                 <td><?= $evt['ancien_etat'] ? etat_chariot_label($evt['ancien_etat']) : '—' ?></td>
                 <td><span class="badge <?= etat_chariot_badge($evt['nouvel_etat']) ?>"><?= etat_chariot_label($evt['nouvel_etat']) ?></span></td>
-                <td><?= htmlspecialchars($evt['commentaire'] ?? '') ?></td>
             </tr>
         <?php endforeach; ?>
     </tbody>

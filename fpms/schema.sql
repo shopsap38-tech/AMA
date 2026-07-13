@@ -16,7 +16,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ---------------------------------------------------------------------------
 CREATE TABLE chariots (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    marque VARCHAR(100) NOT NULL,
     type ENUM('electrique', 'diesel') NOT NULL,
     etat ENUM('disponible', 'maintenance', 'panne') NOT NULL DEFAULT 'disponible',
     unite ENUM('liquide', 'sachet', 'transfert', 'mp', 'chargement', 'papier', 'retour', 'dechet') NULL,
@@ -43,7 +42,6 @@ CREATE TABLE palettes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     etat ENUM('conforme', 'non_conforme', 'cassee') NOT NULL DEFAULT 'conforme',
     quantite INT NOT NULL DEFAULT 1,
-    commentaire VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;

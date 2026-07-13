@@ -134,7 +134,6 @@ require_once __DIR__ . '/includes/header.php';
     <thead>
         <tr>
             <th>Réf.</th>
-            <th>Marque</th>
             <th>Type</th>
             <th>Unité</th>
             <th>État</th>
@@ -144,12 +143,11 @@ require_once __DIR__ . '/includes/header.php';
     </thead>
     <tbody>
         <?php if (empty($chariots)): ?>
-            <tr><td colspan="7">Aucun chariot enregistré.</td></tr>
+            <tr><td colspan="6">Aucun chariot enregistré.</td></tr>
         <?php endif; ?>
         <?php foreach ($chariots as $ch): ?>
             <tr class="<?= $ch['etat'] === 'panne' ? 'row-alert' : '' ?>">
                 <td><strong>#<?= (int) $ch['id'] ?></strong></td>
-                <td><?= htmlspecialchars($ch['marque']) ?></td>
                 <td><?= $ch['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?></td>
                 <td><?= htmlspecialchars(unite_label($ch['unite'])) ?></td>
                 <td><span class="badge <?= etat_chariot_badge($ch['etat']) ?>"><?= etat_chariot_label($ch['etat']) ?></span></td>

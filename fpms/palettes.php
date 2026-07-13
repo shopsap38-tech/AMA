@@ -81,13 +81,12 @@ require_once __DIR__ . '/includes/header.php';
             <th>État</th>
             <th>Quantité</th>
             <th>Date</th>
-            <th>Commentaire</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         <?php if (empty($palettes)): ?>
-            <tr><td colspan="6">Aucune palette enregistrée.</td></tr>
+            <tr><td colspan="5">Aucune palette enregistrée.</td></tr>
         <?php endif; ?>
         <?php foreach ($palettes as $pal): ?>
             <tr class="<?= $pal['etat'] === 'cassee' ? 'row-alert' : '' ?>">
@@ -95,7 +94,6 @@ require_once __DIR__ . '/includes/header.php';
                 <td><span class="badge <?= etat_palette_badge($pal['etat']) ?>"><?= etat_palette_label($pal['etat']) ?></span></td>
                 <td><?= (int) $pal['quantite'] ?></td>
                 <td><?= !empty($pal['created_at']) ? date('d/m/Y', strtotime($pal['created_at'])) : '—' ?></td>
-                <td><?= htmlspecialchars($pal['commentaire'] ?? '') ?></td>
                 <td class="actions">
                     <a href="/fpms/palette_form.php?id=<?= (int) $pal['id'] ?>">Modifier</a>
                     <a class="danger" href="/fpms/palette_delete.php?id=<?= (int) $pal['id'] ?>"

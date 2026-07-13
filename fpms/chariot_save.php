@@ -9,7 +9,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 require_once __DIR__ . '/includes/functions.php';
 
 $id     = (int) ($_POST['id'] ?? 0);
-$marque = trim($_POST['marque'] ?? '');
 $type   = $_POST['type'] ?? '';
 $etat   = $_POST['etat'] ?? '';
 $unite  = $_POST['unite'] ?? '';
@@ -17,8 +16,7 @@ $unite  = array_key_exists($unite, unites()) ? $unite : null;
 $dateMS = $_POST['date_mise_service'] ?? '';
 $dateMS = $dateMS !== '' ? $dateMS : null;
 
-if ($marque === ''
-    || !in_array($type, ['electrique', 'diesel'], true)
+if (!in_array($type, ['electrique', 'diesel'], true)
     || !in_array($etat, ['disponible', 'maintenance', 'panne'], true)) {
     $back = $id ? "?id=$id" : '';
     header('Location: /fpms/chariot_form.php' . $back . '&error=' . urlencode('Veuillez remplir tous les champs obligatoires.'));
@@ -34,10 +32,10 @@ try {
 
         $stmt = $pdo->prepare(
             'UPDATE chariots
-                SET marque = ?, type = ?, etat = ?, unite = ?, date_mise_service = ?
+                SET type = ?, etat = ?, unite = ?, date_mise_service = ?
               WHERE id = ?'
         );
-        $stmt->execute([$marque, $type, $etat, $unite, $dateMS, $id]);
+        $stmt->execute([$type, $etat, $unite, $dateMS, $id]);
 
         if ($ancienEtat !== false && $ancienEtat !== $etat) {
             $h = $pdo->prepare(
@@ -49,10 +47,10 @@ try {
         $msg = 'Chariot mis à jour.';
     } else {
         $stmt = $pdo->prepare(
-            'INSERT INTO chariots (marque, type, etat, unite, date_mise_service)
-             VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO chariots (type, etat, unite, date_mise_service)
+             VALUES (?, ?, ?, ?)'
         );
-        $stmt->execute([$marque, $type, $etat, $unite, $dateMS]);
+        $stmt->execute([$type, $etat, $unite, $dateMS]);
         $newId = (int) $pdo->lastInsertId();
 
         $h = $pdo->prepare(

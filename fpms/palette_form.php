@@ -4,7 +4,7 @@ require_once __DIR__ . '/config/database.php';
 $pageTitle   = 'FPMS - Fiche palette';
 $currentPage = 'palettes';
 
-$palette = ['id' => '', 'etat' => 'conforme', 'quantite' => 1, 'commentaire' => '', 'date' => date('Y-m-d')];
+$palette = ['id' => '', 'etat' => 'conforme', 'quantite' => 1, 'date' => date('Y-m-d')];
 
 if (isset($_GET['id'])) {
     $stmt = $pdo->prepare('SELECT * FROM palettes WHERE id = ?');
@@ -45,10 +45,6 @@ require_once __DIR__ . '/includes/header.php';
     <label>Date *
         <input type="date" name="date" required value="<?= htmlspecialchars($palette['date']) ?>">
         <span class="hint">Date d'enregistrement (utilisée dans l'évolution).</span>
-    </label>
-
-    <label>Commentaire
-        <textarea name="commentaire" rows="3"><?= htmlspecialchars($palette['commentaire'] ?? '') ?></textarea>
     </label>
 
     <button type="submit"><?= $isEdit ? 'Enregistrer' : 'Ajouter' ?></button>

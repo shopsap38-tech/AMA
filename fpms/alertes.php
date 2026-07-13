@@ -38,7 +38,7 @@ require_once __DIR__ . '/includes/header.php';
 <h3>Chariots indisponibles (<?= count($chariotsHS) ?>)</h3>
 <table class="table" style="margin-bottom:1.5rem">
     <thead>
-        <tr><th>Réf.</th><th>Marque</th><th>Type</th><th>État</th></tr>
+        <tr><th>Réf.</th><th>Type</th><th>Unité</th><th>État</th></tr>
     </thead>
     <tbody>
         <?php if (empty($chariotsHS)): ?>
@@ -47,8 +47,8 @@ require_once __DIR__ . '/includes/header.php';
         <?php foreach ($chariotsHS as $ch): ?>
             <tr class="row-alert">
                 <td><strong>#<?= (int) $ch['id'] ?></strong></td>
-                <td><?= htmlspecialchars($ch['marque']) ?></td>
                 <td><?= $ch['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?></td>
+                <td><?= htmlspecialchars(unite_label($ch['unite'])) ?></td>
                 <td><span class="badge <?= etat_chariot_badge($ch['etat']) ?>"><?= etat_chariot_label($ch['etat']) ?></span></td>
             </tr>
         <?php endforeach; ?>
@@ -58,7 +58,7 @@ require_once __DIR__ . '/includes/header.php';
 <h3>Palettes à traiter (<?= count($palettesHS) ?>)</h3>
 <table class="table">
     <thead>
-        <tr><th>Réf.</th><th>État</th><th>Commentaire</th></tr>
+        <tr><th>Réf.</th><th>État</th><th>Quantité</th></tr>
     </thead>
     <tbody>
         <?php if (empty($palettesHS)): ?>
@@ -68,7 +68,7 @@ require_once __DIR__ . '/includes/header.php';
             <tr class="row-alert">
                 <td><strong>#<?= (int) $pal['id'] ?></strong></td>
                 <td><span class="badge <?= etat_palette_badge($pal['etat']) ?>"><?= etat_palette_label($pal['etat']) ?></span></td>
-                <td><?= htmlspecialchars($pal['commentaire'] ?? '') ?></td>
+                <td><?= (int) $pal['quantite'] ?></td>
             </tr>
         <?php endforeach; ?>
     </tbody>

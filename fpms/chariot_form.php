@@ -6,7 +6,7 @@ $pageTitle   = 'FPMS - Fiche chariot';
 $currentPage = 'chariots';
 
 $chariot = [
-    'id' => '', 'marque' => '',
+    'id' => '',
     'type' => 'electrique', 'etat' => 'disponible', 'unite' => '', 'date_mise_service' => '',
 ];
 
@@ -31,10 +31,6 @@ require_once __DIR__ . '/includes/header.php';
 
 <form class="form" method="post" action="/fpms/chariot_save.php">
     <input type="hidden" name="id" value="<?= htmlspecialchars((string) $chariot['id']) ?>">
-
-    <label>Marque *
-        <input type="text" name="marque" required value="<?= htmlspecialchars($chariot['marque']) ?>">
-    </label>
 
     <label>Type *
         <select name="type">
