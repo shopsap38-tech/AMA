@@ -16,7 +16,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ---------------------------------------------------------------------------
 CREATE TABLE chariots (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
     marque VARCHAR(100) NOT NULL,
     type ENUM('electrique', 'diesel') NOT NULL,
     etat ENUM('disponible', 'maintenance', 'panne') NOT NULL DEFAULT 'disponible',
@@ -42,7 +41,6 @@ CREATE TABLE chariot_historique (
 -- ---------------------------------------------------------------------------
 CREATE TABLE palettes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
     etat ENUM('conforme', 'non_conforme', 'cassee') NOT NULL DEFAULT 'conforme',
     quantite INT NOT NULL DEFAULT 1,
     commentaire VARCHAR(255) NULL,

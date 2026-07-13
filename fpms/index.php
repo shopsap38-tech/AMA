@@ -49,11 +49,11 @@ require_once __DIR__ . '/includes/header.php';
         <div class="kpi-value"><?= $c['diesel'] ?></div>
     </div>
     <div class="kpi-card green">
-        <div class="kpi-label">Chariots disponibles</div>
+        <div class="kpi-label">Chariots opérationnels</div>
         <div class="kpi-value"><?= $c['disponible'] ?></div>
     </div>
     <div class="kpi-card orange">
-        <div class="kpi-label">En maintenance</div>
+        <div class="kpi-label">En réparation</div>
         <div class="kpi-value"><?= $c['maintenance'] ?></div>
     </div>
     <div class="kpi-card red">

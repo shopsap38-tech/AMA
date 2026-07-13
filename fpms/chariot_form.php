@@ -6,7 +6,7 @@ $pageTitle   = 'FPMS - Fiche chariot';
 $currentPage = 'chariots';
 
 $chariot = [
-    'id' => '', 'code' => '', 'marque' => '',
+    'id' => '', 'marque' => '',
     'type' => 'electrique', 'etat' => 'disponible', 'unite' => '', 'date_mise_service' => '',
 ];
 
@@ -32,10 +32,6 @@ require_once __DIR__ . '/includes/header.php';
 <form class="form" method="post" action="/fpms/chariot_save.php">
     <input type="hidden" name="id" value="<?= htmlspecialchars((string) $chariot['id']) ?>">
 
-    <label>Code chariot *
-        <input type="text" name="code" required value="<?= htmlspecialchars($chariot['code']) ?>" placeholder="CH-001">
-    </label>
-
     <label>Marque *
         <input type="text" name="marque" required value="<?= htmlspecialchars($chariot['marque']) ?>">
     </label>
@@ -49,8 +45,8 @@ require_once __DIR__ . '/includes/header.php';
 
     <label>État *
         <select name="etat">
-            <option value="disponible" <?= $chariot['etat'] === 'disponible' ? 'selected' : '' ?>>Disponible</option>
-            <option value="maintenance" <?= $chariot['etat'] === 'maintenance' ? 'selected' : '' ?>>En maintenance</option>
+            <option value="disponible" <?= $chariot['etat'] === 'disponible' ? 'selected' : '' ?>>Opérationnel</option>
+            <option value="maintenance" <?= $chariot['etat'] === 'maintenance' ? 'selected' : '' ?>>Réparation</option>
             <option value="panne" <?= $chariot['etat'] === 'panne' ? 'selected' : '' ?>>En panne</option>
         </select>
     </label>

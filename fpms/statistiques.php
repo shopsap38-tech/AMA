@@ -20,7 +20,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="kpi-value"><?= $c['taux_dispo'] ?><span class="kpi-unit">%</span></div>
     </div>
     <div class="kpi-card">
-        <div class="kpi-label">Chariots disponibles</div>
+        <div class="kpi-label">Chariots opérationnels</div>
         <div class="kpi-value"><?= $c['disponible'] ?> / <?= $c['total'] ?></div>
     </div>
     <div class="kpi-card red">
@@ -48,7 +48,7 @@ require_once __DIR__ . '/includes/header.php';
     <tbody>
         <?php foreach ($arret as $a): ?>
             <tr>
-                <td><strong><?= htmlspecialchars($a['code']) ?></strong></td>
+                <td><strong><?= htmlspecialchars($a['ref']) ?></strong></td>
                 <td><span class="badge <?= etat_chariot_badge($a['etat']) ?>"><?= etat_chariot_label($a['etat']) ?></span></td>
                 <td><?= number_format($a['heures'], 1, ',', ' ') ?></td>
             </tr>
@@ -61,11 +61,11 @@ require_once __DIR__ . '/includes/header.php';
 <script>
 const COL = { green:'#2b8a3e', orange:'#f08c00', red:'#c92a2a', blue:'#1971c2' };
 
-histogramme('chartDispo', ['Disponible', 'Maintenance', 'Panne'],
+histogramme('chartDispo', ['Opérationnel', 'Réparation', 'En panne'],
     [<?= $c['disponible'] ?>, <?= $c['maintenance'] ?>, <?= $c['panne'] ?>],
     [COL.green, COL.orange, COL.red], { titre: 'Chariots' });
 
-histogramme('chartArret', <?= json_encode(array_column($arret, 'code')) ?>,
+histogramme('chartArret', <?= json_encode(array_column($arret, 'ref')) ?>,
     <?= json_encode(array_column($arret, 'heures')) ?>, COL.red,
     { titre: 'Heures', horizontal: true });
 </script>

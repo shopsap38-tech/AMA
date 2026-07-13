@@ -26,7 +26,7 @@ $historique = $h->fetchAll();
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<h2>Historique — <?= htmlspecialchars($chariot['code']) ?></h2>
+<h2>Historique — #<?= (int) $chariot['id'] ?> <?= htmlspecialchars($chariot['marque']) ?></h2>
 
 <div class="card" style="margin-bottom:1.5rem">
     <p style="margin:0">

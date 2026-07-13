@@ -9,7 +9,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 require_once __DIR__ . '/includes/functions.php';
 
 $id     = (int) ($_POST['id'] ?? 0);
-$code   = trim($_POST['code'] ?? '');
 $marque = trim($_POST['marque'] ?? '');
 $type   = $_POST['type'] ?? '';
 $etat   = $_POST['etat'] ?? '';
@@ -18,7 +17,7 @@ $unite  = array_key_exists($unite, unites()) ? $unite : null;
 $dateMS = $_POST['date_mise_service'] ?? '';
 $dateMS = $dateMS !== '' ? $dateMS : null;
 
-if ($code === '' || $marque === ''
+if ($marque === ''
     || !in_array($type, ['electrique', 'diesel'], true)
     || !in_array($etat, ['disponible', 'maintenance', 'panne'], true)) {
     $back = $id ? "?id=$id" : '';
@@ -35,10 +34,10 @@ try {
 
         $stmt = $pdo->prepare(
             'UPDATE chariots
-                SET code = ?, marque = ?, type = ?, etat = ?, unite = ?, date_mise_service = ?
+                SET marque = ?, type = ?, etat = ?, unite = ?, date_mise_service = ?
               WHERE id = ?'
         );
-        $stmt->execute([$code, $marque, $type, $etat, $unite, $dateMS, $id]);
+        $stmt->execute([$marque, $type, $etat, $unite, $dateMS, $id]);
 
         if ($ancienEtat !== false && $ancienEtat !== $etat) {
             $h = $pdo->prepare(
@@ -50,10 +49,10 @@ try {
         $msg = 'Chariot mis à jour.';
     } else {
         $stmt = $pdo->prepare(
-            'INSERT INTO chariots (code, marque, type, etat, unite, date_mise_service)
-             VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO chariots (marque, type, etat, unite, date_mise_service)
+             VALUES (?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$code, $marque, $type, $etat, $unite, $dateMS]);
+        $stmt->execute([$marque, $type, $etat, $unite, $dateMS]);
         $newId = (int) $pdo->lastInsertId();
 
         $h = $pdo->prepare(
@@ -65,10 +64,7 @@ try {
     }
 } catch (PDOException $e) {
     $back = $id ? "?id=$id" : '';
-    $err = str_contains($e->getMessage(), 'Duplicate')
-        ? 'Ce code chariot existe déjà.'
-        : 'Erreur : ' . $e->getMessage();
-    header('Location: /fpms/chariot_form.php' . $back . '&error=' . urlencode($err));
+    header('Location: /fpms/chariot_form.php' . $back . '&error=' . urlencode('Erreur : ' . $e->getMessage()));
     exit;
 }
 

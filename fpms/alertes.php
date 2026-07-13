@@ -9,11 +9,11 @@ $p = stats_palettes($pdo);
 $stockFaible = $p['conforme'] <= SEUIL_PALETTES;
 
 $chariotsHS = $pdo->query(
-    "SELECT * FROM chariots WHERE etat IN ('panne','maintenance') ORDER BY etat, code"
+    "SELECT * FROM chariots WHERE etat IN ('panne','maintenance') ORDER BY etat, id"
 )->fetchAll();
 
 $palettesHS = $pdo->query(
-    "SELECT * FROM palettes WHERE etat IN ('non_conforme','cassee') ORDER BY etat, code"
+    "SELECT * FROM palettes WHERE etat IN ('non_conforme','cassee') ORDER BY etat, id"
 )->fetchAll();
 
 require_once __DIR__ . '/includes/header.php';
@@ -38,15 +38,15 @@ require_once __DIR__ . '/includes/header.php';
 <h3>Chariots indisponibles (<?= count($chariotsHS) ?>)</h3>
 <table class="table" style="margin-bottom:1.5rem">
     <thead>
-        <tr><th>Code</th><th>Marque</th><th>Type</th><th>État</th></tr>
+        <tr><th>Réf.</th><th>Marque</th><th>Type</th><th>État</th></tr>
     </thead>
     <tbody>
         <?php if (empty($chariotsHS)): ?>
-            <tr><td colspan="4">Tous les chariots sont disponibles.</td></tr>
+            <tr><td colspan="4">Tous les chariots sont opérationnels.</td></tr>
         <?php endif; ?>
         <?php foreach ($chariotsHS as $ch): ?>
             <tr class="row-alert">
-                <td><strong><?= htmlspecialchars($ch['code']) ?></strong></td>
+                <td><strong>#<?= (int) $ch['id'] ?></strong></td>
                 <td><?= htmlspecialchars($ch['marque']) ?></td>
                 <td><?= $ch['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?></td>
                 <td><span class="badge <?= etat_chariot_badge($ch['etat']) ?>"><?= etat_chariot_label($ch['etat']) ?></span></td>
@@ -58,7 +58,7 @@ require_once __DIR__ . '/includes/header.php';
 <h3>Palettes à traiter (<?= count($palettesHS) ?>)</h3>
 <table class="table">
     <thead>
-        <tr><th>Code</th><th>État</th><th>Commentaire</th></tr>
+        <tr><th>Réf.</th><th>État</th><th>Commentaire</th></tr>
     </thead>
     <tbody>
         <?php if (empty($palettesHS)): ?>
@@ -66,7 +66,7 @@ require_once __DIR__ . '/includes/header.php';
         <?php endif; ?>
         <?php foreach ($palettesHS as $pal): ?>
             <tr class="row-alert">
-                <td><strong><?= htmlspecialchars($pal['code']) ?></strong></td>
+                <td><strong>#<?= (int) $pal['id'] ?></strong></td>
                 <td><span class="badge <?= etat_palette_badge($pal['etat']) ?>"><?= etat_palette_label($pal['etat']) ?></span></td>
                 <td><?= htmlspecialchars($pal['commentaire'] ?? '') ?></td>
             </tr>

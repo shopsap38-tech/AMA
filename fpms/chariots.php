@@ -23,7 +23,7 @@ if (in_array($filtreEtat, ['disponible', 'maintenance', 'panne'], true)) {
 if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
 }
-$sql .= ' ORDER BY code ASC';
+$sql .= ' ORDER BY id ASC';
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -53,16 +53,16 @@ require_once __DIR__ . '/includes/header.php';
         <div class="kpi-value"><?= $c['total'] ?></div>
     </div>
     <div class="kpi-card green">
-        <div class="kpi-label">Disponibles</div>
+        <div class="kpi-label">Opérationnels</div>
         <div class="kpi-value"><?= $c['disponible'] ?></div>
-    </div>
-    <div class="kpi-card orange">
-        <div class="kpi-label">En maintenance</div>
-        <div class="kpi-value"><?= $c['maintenance'] ?></div>
     </div>
     <div class="kpi-card red">
         <div class="kpi-label">En panne</div>
         <div class="kpi-value"><?= $c['panne'] ?></div>
+    </div>
+    <div class="kpi-card orange">
+        <div class="kpi-label">Réparation</div>
+        <div class="kpi-value"><?= $c['maintenance'] ?></div>
     </div>
     <div class="kpi-card purple">
         <div class="kpi-label">Électriques / Diesel</div>
@@ -122,8 +122,8 @@ require_once __DIR__ . '/includes/header.php';
     <label>État
         <select name="etat" onchange="this.form.submit()">
             <option value="">Tous</option>
-            <option value="disponible" <?= $filtreEtat === 'disponible' ? 'selected' : '' ?>>Disponible</option>
-            <option value="maintenance" <?= $filtreEtat === 'maintenance' ? 'selected' : '' ?>>En maintenance</option>
+            <option value="disponible" <?= $filtreEtat === 'disponible' ? 'selected' : '' ?>>Opérationnel</option>
+            <option value="maintenance" <?= $filtreEtat === 'maintenance' ? 'selected' : '' ?>>Réparation</option>
             <option value="panne" <?= $filtreEtat === 'panne' ? 'selected' : '' ?>>En panne</option>
         </select>
     </label>
@@ -133,7 +133,7 @@ require_once __DIR__ . '/includes/header.php';
 <table class="table">
     <thead>
         <tr>
-            <th>Code</th>
+            <th>Réf.</th>
             <th>Marque</th>
             <th>Type</th>
             <th>Unité</th>
@@ -148,7 +148,7 @@ require_once __DIR__ . '/includes/header.php';
         <?php endif; ?>
         <?php foreach ($chariots as $ch): ?>
             <tr class="<?= $ch['etat'] === 'panne' ? 'row-alert' : '' ?>">
-                <td><strong><?= htmlspecialchars($ch['code']) ?></strong></td>
+                <td><strong>#<?= (int) $ch['id'] ?></strong></td>
                 <td><?= htmlspecialchars($ch['marque']) ?></td>
                 <td><?= $ch['type'] === 'electrique' ? 'Électrique' : 'Diesel' ?></td>
                 <td><?= htmlspecialchars(unite_label($ch['unite'])) ?></td>
@@ -170,14 +170,14 @@ require_once __DIR__ . '/includes/header.php';
 <script>
 const COL = { green:'#16a34a', orange:'#f59e0b', red:'#dc2626', blue:'#2563eb', purple:'#7c3aed' };
 
-histogramme('chEtat', ['Disponible','Maintenance','Panne'],
+histogramme('chEtat', ['Opérationnel','Réparation','En panne'],
     [<?= $c['disponible'] ?>,<?= $c['maintenance'] ?>,<?= $c['panne'] ?>],
     [COL.green, COL.orange, COL.red], { titre: 'Chariots' });
 
 histogramme('chType', ['Électrique','Diesel'],
     [<?= $c['electrique'] ?>,<?= $c['diesel'] ?>], [COL.purple, COL.orange], { titre: 'Chariots' });
 
-histogramme('chArret', <?= json_encode(array_column($arret, 'code')) ?>,
+histogramme('chArret', <?= json_encode(array_column($arret, 'ref')) ?>,
     <?= json_encode(array_column($arret, 'heures')) ?>, COL.red, { titre: 'Heures' });
 
 histogramme('chEvo', <?= json_encode(array_keys($evo)) ?>,

@@ -4,12 +4,12 @@
  * Fonctions utilitaires et requêtes statistiques partagées par les pages.
  */
 
-/** Libellés lisibles pour les états des chariots. */
+/** Libellés lisibles pour les états des chariots (terminologie du suivi : OK / Réparation / En panne). */
 function etat_chariot_label(string $etat): string
 {
     return [
-        'disponible'  => 'Disponible',
-        'maintenance' => 'En maintenance',
+        'disponible'  => 'Opérationnel',
+        'maintenance' => 'Réparation',
         'panne'       => 'En panne',
     ][$etat] ?? $etat;
 }
@@ -190,10 +190,36 @@ function evolution(PDO $pdo, string $table, string $dateCol, string $valueExpr, 
     return $serie;
 }
 
-/** Quantité de palettes créées par période (jour / mois / année). */
-function palettes_evolution(PDO $pdo, string $periode): array
+/**
+ * Nombre (quantité) de palettes par état et par période — pour un histogramme empilé.
+ * Retourne [ 'labels' => [...], 'conforme' => [...], 'non_conforme' => [...], 'cassee' => [...] ].
+ */
+function palettes_etat_evolution(PDO $pdo, string $periode): array
 {
-    return evolution($pdo, 'palettes', 'created_at', 'COALESCE(SUM(quantite),0)', $periode);
+    if ($periode === 'annee') {
+        $grp = "YEAR(created_at)";
+    } elseif ($periode === 'mois') {
+        $grp = "DATE_FORMAT(created_at, '%Y-%m')";
+    } else {
+        $grp = "DATE(created_at)";
+    }
+
+    // map[cléPériode][etat] = quantité
+    $map = [];
+    $sql = "SELECT $grp AS k, etat, COALESCE(SUM(quantite),0) AS q
+              FROM palettes WHERE created_at IS NOT NULL GROUP BY k, etat";
+    foreach ($pdo->query($sql) as $row) {
+        $map[(string) $row['k']][$row['etat']] = (int) $row['q'];
+    }
+
+    $out = ['labels' => [], 'conforme' => [], 'non_conforme' => [], 'cassee' => []];
+    foreach (periodes_labels($periode) as $key => $label) {
+        $out['labels'][]       = $label;
+        $out['conforme'][]     = $map[(string) $key]['conforme']     ?? 0;
+        $out['non_conforme'][] = $map[(string) $key]['non_conforme'] ?? 0;
+        $out['cassee'][]       = $map[(string) $key]['cassee']       ?? 0;
+    }
+    return $out;
 }
 
 /** Nombre de chariots mis en service par période (jour / mois / année). */
@@ -230,7 +256,7 @@ function periode_selector(string $active): string
  */
 function temps_arret_par_chariot(PDO $pdo): array
 {
-    $chariots = $pdo->query('SELECT id, code, etat FROM chariots ORDER BY code')->fetchAll();
+    $chariots = $pdo->query('SELECT id, marque, etat FROM chariots ORDER BY id')->fetchAll();
 
     $histStmt = $pdo->query(
         'SELECT chariot_id, nouvel_etat, date_evenement
@@ -263,7 +289,7 @@ function temps_arret_par_chariot(PDO $pdo): array
         }
 
         $result[] = [
-            'code'   => $ch['code'],
+            'ref'    => '#' . $ch['id'],
             'etat'   => $ch['etat'],
             'heures' => round($secondes / 3600, 1),
         ];

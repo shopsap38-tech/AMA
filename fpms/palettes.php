@@ -14,13 +14,13 @@ if (in_array($filtreEtat, ['conforme', 'non_conforme', 'cassee'], true)) {
     $sql .= ' WHERE etat = :etat';
     $params[':etat'] = $filtreEtat;
 }
-$sql .= ' ORDER BY code ASC';
+$sql .= ' ORDER BY id ASC';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $palettes = $stmt->fetchAll();
 
 $p   = stats_palettes($pdo);
-$evo = palettes_evolution($pdo, $periode);
+$evo = palettes_etat_evolution($pdo, $periode);
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -53,18 +53,12 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<div class="charts-grid">
-    <div class="card">
+<div class="card card-chart">
+    <div class="card-head">
         <h3>Nombre de palettes par état</h3>
-        <canvas id="chEtat"></canvas>
+        <?= periode_selector($periode) ?>
     </div>
-    <div class="card">
-        <div class="card-head">
-            <h3>Palettes créées (quantité)</h3>
-            <?= periode_selector($periode) ?>
-        </div>
-        <canvas id="chEvo"></canvas>
-    </div>
+    <canvas id="chEtat"></canvas>
 </div>
 
 <form class="filters" method="get">
@@ -83,22 +77,24 @@ require_once __DIR__ . '/includes/header.php';
 <table class="table">
     <thead>
         <tr>
-            <th>Code</th>
+            <th>Réf.</th>
             <th>État</th>
             <th>Quantité</th>
+            <th>Date</th>
             <th>Commentaire</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         <?php if (empty($palettes)): ?>
-            <tr><td colspan="5">Aucune palette enregistrée.</td></tr>
+            <tr><td colspan="6">Aucune palette enregistrée.</td></tr>
         <?php endif; ?>
         <?php foreach ($palettes as $pal): ?>
             <tr class="<?= $pal['etat'] === 'cassee' ? 'row-alert' : '' ?>">
-                <td><strong><?= htmlspecialchars($pal['code']) ?></strong></td>
+                <td><strong>#<?= (int) $pal['id'] ?></strong></td>
                 <td><span class="badge <?= etat_palette_badge($pal['etat']) ?>"><?= etat_palette_label($pal['etat']) ?></span></td>
                 <td><?= (int) $pal['quantite'] ?></td>
+                <td><?= !empty($pal['created_at']) ? date('d/m/Y', strtotime($pal['created_at'])) : '—' ?></td>
                 <td><?= htmlspecialchars($pal['commentaire'] ?? '') ?></td>
                 <td class="actions">
                     <a href="/fpms/palette_form.php?id=<?= (int) $pal['id'] ?>">Modifier</a>
@@ -113,14 +109,11 @@ require_once __DIR__ . '/includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="/fpms/assets/charts.js"></script>
 <script>
-const COL = { green:'#16a34a', orange:'#f59e0b', red:'#dc2626', blue:'#2563eb' };
-
-histogramme('chEtat', ['Conforme','Non conforme','Cassée'],
-    [<?= $p['conforme'] ?>,<?= $p['non_conforme'] ?>,<?= $p['cassee'] ?>],
-    [COL.green, COL.orange, COL.red], { titre: 'Quantité' });
-
-histogramme('chEvo', <?= json_encode(array_keys($evo)) ?>,
-    <?= json_encode(array_values($evo)) ?>, COL.blue, { titre: 'Quantité' });
+histogrammeEmpile('chEtat', <?= json_encode($evo['labels']) ?>, [
+    { label: 'Conforme',     data: <?= json_encode($evo['conforme']) ?>,     color: '#16a34a' },
+    { label: 'Non conforme', data: <?= json_encode($evo['non_conforme']) ?>, color: '#f59e0b' },
+    { label: 'Cassée',       data: <?= json_encode($evo['cassee']) ?>,       color: '#dc2626' }
+], { aspectRatio: 3.0 });
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

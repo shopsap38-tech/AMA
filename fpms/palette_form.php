@@ -4,7 +4,7 @@ require_once __DIR__ . '/config/database.php';
 $pageTitle   = 'FPMS - Fiche palette';
 $currentPage = 'palettes';
 
-$palette = ['id' => '', 'code' => '', 'etat' => 'conforme', 'quantite' => 1, 'commentaire' => '', 'date' => date('Y-m-d')];
+$palette = ['id' => '', 'etat' => 'conforme', 'quantite' => 1, 'commentaire' => '', 'date' => date('Y-m-d')];
 
 if (isset($_GET['id'])) {
     $stmt = $pdo->prepare('SELECT * FROM palettes WHERE id = ?');
@@ -28,10 +28,6 @@ require_once __DIR__ . '/includes/header.php';
 
 <form class="form" method="post" action="/fpms/palette_save.php">
     <input type="hidden" name="id" value="<?= htmlspecialchars((string) $palette['id']) ?>">
-
-    <label>Code palette *
-        <input type="text" name="code" required value="<?= htmlspecialchars($palette['code']) ?>" placeholder="PAL-0001">
-    </label>
 
     <label>État *
         <select name="etat">

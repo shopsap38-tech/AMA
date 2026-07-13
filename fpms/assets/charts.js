@@ -21,9 +21,10 @@
         afterDatasetsDraw(chart) {
             const ctx = chart.ctx;
             const horizontal = chart.options.indexAxis === 'y';
+            const stacked = !!((chart.options.scales && chart.options.scales.y && chart.options.scales.y.stacked)
+                || (chart.options.scales && chart.options.scales.x && chart.options.scales.x.stacked));
             ctx.save();
             ctx.font = '700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-            ctx.fillStyle = '#0f172a';
 
             chart.data.datasets.forEach((ds, di) => {
                 const meta = chart.getDatasetMeta(di);
@@ -34,11 +35,21 @@
                     if (val === 0) { return; } // pas d'étiquette sur les colonnes vides
                     const label = Number.isInteger(val) ? String(val) : String(Math.round(val * 10) / 10);
 
-                    if (horizontal) {
+                    if (stacked) {
+                        // Étiquette centrée dans le segment (texte blanc), sauf segment trop fin.
+                        const epaisseur = Math.abs(bar.base - bar.y);
+                        if (epaisseur < 16) { return; }
+                        ctx.fillStyle = '#ffffff';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(label, bar.x, (bar.y + bar.base) / 2);
+                    } else if (horizontal) {
+                        ctx.fillStyle = '#0f172a';
                         ctx.textAlign = 'left';
                         ctx.textBaseline = 'middle';
                         ctx.fillText(label, bar.x + 8, bar.y);
                     } else {
+                        ctx.fillStyle = '#0f172a';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'bottom';
                         ctx.fillText(label, bar.x, bar.y - 6);
@@ -91,6 +102,45 @@
                 scales: extra.horizontal
                     ? { x: scaleVal, y: scaleCat }
                     : { y: scaleVal, x: scaleCat }
+            }
+        });
+    };
+
+    /**
+     * Histogramme empilé (colonnes empilées) avec la valeur au centre de chaque segment.
+     * @param {HTMLCanvasElement|string} cible
+     * @param {string[]} labels  catégories de l'axe X (périodes)
+     * @param {{label:string,data:number[],color:string}[]} series  séries empilées
+     * @param {object} extra  { aspectRatio }
+     */
+    window.histogrammeEmpile = function (cible, labels, series, extra) {
+        extra = extra || {};
+        return new Chart(cible, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: series.map(function (s) {
+                    return {
+                        label: s.label,
+                        data: s.data,
+                        backgroundColor: s.color,
+                        borderRadius: 4,
+                        maxBarThickness: 84
+                    };
+                })
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: extra.aspectRatio || 2.2,
+                plugins: {
+                    legend: { display: true, position: 'bottom', labels: { font: { size: 13 } } },
+                    tooltip: { titleFont: { size: 14 }, bodyFont: { size: 14 } }
+                },
+                scales: {
+                    x: { stacked: true, ticks: { font: { size: 13 } }, grid: { display: false } },
+                    y: { stacked: true, beginAtZero: true, grace: '8%', ticks: { precision: 0, font: { size: 13 } }, grid: { color: 'rgba(148,163,184,.2)' } }
+                }
             }
         });
     };
