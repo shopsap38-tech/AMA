@@ -19,8 +19,34 @@ $bb = $pdo->query('SELECT COUNT(*) AS lignes, COALESCE(SUM(total_big_bag),0) AS 
                           COALESCE(SUM(tonnage),0) AS tonnage
                    FROM nc_big_bag')->fetch();
 
+// Répartition du désinfectant par type d'article (nbr de palettes)
+$deTypes = $pdo->query("SELECT COALESCE(NULLIF(type_article,''),'Autre') AS type,
+                               SUM(nbr_palettes) AS palettes
+                        FROM nc_desinfectant GROUP BY type ORDER BY palettes DESC")->fetchAll();
+
+// Top articles semi-fini par nombre de palettes
+$sfTop = $pdo->query('SELECT description_article, nbr_palettes
+                      FROM nc_semi_fini ORDER BY nbr_palettes DESC, description_article ASC')->fetchAll();
+
+// Données pour les graphiques
+$chartPalettes = [
+    'Semi-fini'    => (int) $sf['palettes'],
+    'Désinfectant' => (int) $de['palettes'],
+    'Big Bag'      => (int) $bb['big_bags'],
+];
+$chartPoids = [
+    'Semi-fini'    => round((float) $sf['poids_kg'], 0),
+    'Désinfectant' => round((float) $de['poids_kg'], 0),
+    'Big Bag'      => round((float) $bb['tonnage'], 0),
+];
+$chartDeTypes = [];
+foreach ($deTypes as $t) { $chartDeTypes[$t['type']] = (int) $t['palettes']; }
+$chartSfTop = [];
+foreach ($sfTop as $t) { $chartSfTop[$t['description_article']] = (int) $t['nbr_palettes']; }
+
 $today = date('d/m/Y');
 
+require_once __DIR__ . '/includes/charts.php';
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -48,6 +74,27 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 </div>
 
+<h3 class="section-title">Graphiques</h3>
+<div class="charts">
+    <div class="chart-card">
+        <h4>Palettes / big bags par catégorie</h4>
+        <?= svg_bar_chart($chartPalettes, 'unités') ?>
+    </div>
+    <div class="chart-card">
+        <h4>Poids total par catégorie (kg)</h4>
+        <?= svg_bar_chart($chartPoids, 'kg') ?>
+    </div>
+    <div class="chart-card">
+        <h4>Désinfectant : palettes par type d'article</h4>
+        <?= svg_donut($chartDeTypes, 'palettes') ?>
+    </div>
+    <div class="chart-card">
+        <h4>Semi-fini : palettes par article</h4>
+        <?= svg_bar_chart($chartSfTop, 'palettes') ?>
+    </div>
+</div>
+
+<h3 class="section-title">Synthèse détaillée</h3>
 <table class="table">
     <thead>
         <tr>

@@ -117,4 +117,30 @@ h2 { margin-top: 0; }
 .alert-success { background: #d1e7dd; color: #0f5132; }
 .alert-danger { background: #f8d7da; color: #842029; }
 
+/* Graphiques */
+.section-title { margin: 1.75rem 0 0.75rem; font-size: 1.1rem; color: var(--primary-dark); border-bottom: 2px solid var(--border); padding-bottom: 0.3rem; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.1rem 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.chart-card h4 { margin: 0 0 0.75rem; font-size: 0.95rem; color: var(--text); }
+.chart-svg { width: 100%; height: auto; display: block; }
+.chart-grid { stroke: #eceff1; stroke-width: 1; }
+.chart-axis { font-size: 10px; fill: var(--muted); }
+.chart-label { font-size: 10px; fill: var(--muted); }
+.chart-value { font-size: 11px; font-weight: 700; fill: var(--text); }
+.chart-empty { color: var(--muted); font-style: italic; }
+
+.donut-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+.chart-svg.donut { max-width: 220px; }
+.donut-total { font-size: 22px; font-weight: 700; fill: var(--primary-dark); }
+.donut-unit { font-size: 10px; fill: var(--muted); }
+.chart-legend { list-style: none; margin: 0; padding: 0; font-size: 0.88rem; }
+.chart-legend li { margin: 0.3rem 0; }
+.legend-dot { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 0.4rem; vertical-align: middle; }
+
 .site-footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 2rem 1rem; }
