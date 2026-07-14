@@ -1,0 +1,120 @@
+:root {
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --primary: #b02a37;
+    --primary-dark: #8a1f29;
+    --text: #23272b;
+    --muted: #6c757d;
+    --border: #e3e6ea;
+    --ok: #198754;
+    --danger: #b02a37;
+    --warn: #b8860b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.topbar {
+    background: var(--primary);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.topbar h1 { font-size: 1.15rem; margin: 0; }
+.topbar h1 a { color: #fff; }
+.topbar nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+.topbar nav a { color: #ffe3e6; font-size: 0.95rem; }
+.topbar nav a:hover { color: #fff; text-decoration: none; }
+
+.container { max-width: 1200px; margin: 1.5rem auto; padding: 0 1.5rem; }
+
+h2 { margin-top: 0; }
+
+/* Dashboard cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.card h3 { margin: 0 0 0.5rem; font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.card .metric { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.card .sub { color: var(--muted); font-size: 0.9rem; }
+
+/* Tables */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+.table th, .table td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
+.table thead th { background: #f0e4e5; color: var(--primary-dark); font-weight: 600; }
+.table tbody tr:hover { background: #faf5f5; }
+.table tfoot td { font-weight: 700; background: #f7f7f9; border-top: 2px solid var(--border); }
+.text-right { text-align: right; }
+.table-scroll { overflow-x: auto; }
+
+.badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+.badge-danger { background: #f8d7da; color: var(--danger); }
+.badge-ok { background: #d1e7dd; color: var(--ok); }
+.badge-warn { background: #fff3cd; color: var(--warn); }
+
+.actions a { margin-right: 0.6rem; }
+
+/* Forms */
+.form { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; max-width: 720px; }
+.form .field { margin-bottom: 1rem; }
+.form label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; }
+.form input, .form select, .form textarea {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+.form .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+.form .row .field { flex: 1; min-width: 180px; }
+
+.btn {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 0.55rem 1.2rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+}
+.btn:hover { background: var(--primary-dark); text-decoration: none; color: #fff; }
+.btn-secondary { background: var(--muted); }
+.btn-secondary:hover { background: #565e64; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
+
+.alert { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.alert-success { background: #d1e7dd; color: #0f5132; }
+.alert-danger { background: #f8d7da; color: #842029; }
+
+.site-footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 2rem 1rem; }
