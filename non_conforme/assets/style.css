@@ -135,6 +135,15 @@ h2 { margin-top: 0; }
 .chart-value { font-size: 11px; font-weight: 700; fill: var(--text); }
 .chart-empty { color: var(--muted); font-style: italic; }
 
+/* Grand graphique « pro » */
+.chart-hero { padding: 1.5rem 1.75rem 1.75rem; }
+.chart-hero h4 { font-size: 1.15rem; margin-bottom: 1.25rem; }
+.chart-svg.chart-pro { max-width: 100%; }
+.chart-baseline { stroke: #c7ccd1; stroke-width: 1.5; }
+.chart-axis-pro { font-size: 13px; fill: var(--muted); font-weight: 500; }
+.chart-label-pro { font-size: 15px; fill: var(--text); font-weight: 600; }
+.chart-value-pro { font-size: 20px; fill: var(--primary-dark); font-weight: 800; }
+
 .donut-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 .chart-svg.donut { max-width: 220px; }
 .donut-total { font-size: 22px; font-weight: 700; fill: var(--primary-dark); }
