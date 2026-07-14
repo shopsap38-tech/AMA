@@ -12,11 +12,17 @@ foreach ($rows as $r) {
     $totKg     += (float) $r['stock_mag'] * (float) $r['poids_par_carton_kg'];
 }
 
-function fmtDate($d) {
-    return $d ? date('d/m/Y', strtotime($d)) : 'aucune date';
+/** Classe de badge selon le type d'article. */
+function typeBadge(?string $type): string {
+    $t = mb_strtoupper(trim((string) $type));
+    if (strpos($t, 'ALCOOL') !== false)   return 'badge-type-alcool';
+    if (strpos($t, 'SOLUTION') !== false) return 'badge-type-solution';
+    if (strpos($t, 'GEL') !== false)      return 'badge-type-gel';
+    return 'badge-type-autre';
 }
 
 require_once __DIR__ . '/includes/header.php';
+$today = date('Y-m-d');
 ?>
 
 <div class="toolbar">
@@ -29,48 +35,60 @@ require_once __DIR__ . '/includes/header.php';
 <?php endif; ?>
 
 <div class="table-scroll">
-<table class="table">
+<table class="table table-clean">
     <thead>
         <tr>
             <th>Type</th>
-            <th>N° article</th>
-            <th>Description</th>
-            <th class="text-right">Stock MAG</th>
+            <th>Article</th>
+            <th class="text-right">Stock</th>
             <th>Expiration</th>
             <th>Code UM</th>
-            <th class="text-right">Palettes</th>
+            <th class="text-right">Pal.</th>
             <th class="text-right">Prix unit.</th>
             <th class="text-right">Total</th>
             <th class="text-right">Poids/carton</th>
             <th class="text-right">Poids total (kg)</th>
-            <th>Motif</th>
-            <th>Responsable</th>
+            <th>Statut</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         <?php if (empty($rows)): ?>
-            <tr><td colspan="14">Aucune non-conformité enregistrée.</td></tr>
+            <tr><td colspan="12">Aucune non-conformité enregistrée.</td></tr>
         <?php endif; ?>
         <?php foreach ($rows as $r):
             $total = (float) $r['stock_mag'] * (float) $r['prix_unitaire'];
             $poids = (float) $r['stock_mag'] * (float) $r['poids_par_carton_kg'];
+            $exp   = $r['date_expiration'];
+            $isExpired = $exp && $exp < $today;
         ?>
             <tr>
-                <td><?= htmlspecialchars($r['type_article'] ?? '') ?></td>
-                <td><?= htmlspecialchars($r['numero_article']) ?></td>
-                <td><?= htmlspecialchars($r['description_article']) ?></td>
-                <td class="text-right"><?= (int) $r['stock_mag'] ?></td>
-                <td><?= htmlspecialchars(fmtDate($r['date_expiration'])) ?></td>
-                <td><?= htmlspecialchars($r['code_um'] ?? '') ?></td>
-                <td class="text-right"><?= (int) $r['nbr_palettes'] ?></td>
-                <td class="text-right"><?= number_format((float) $r['prix_unitaire'], 2, ',', ' ') ?></td>
-                <td class="text-right"><?= number_format($total, 2, ',', ' ') ?></td>
-                <td class="text-right"><?= number_format((float) $r['poids_par_carton_kg'], 3, ',', ' ') ?></td>
-                <td class="text-right"><?= number_format($poids, 2, ',', ' ') ?></td>
-                <td><?php if ($r['motif']): ?><span class="badge badge-danger"><?= htmlspecialchars($r['motif']) ?></span><?php endif; ?></td>
-                <td><?= htmlspecialchars($r['responsable'] ?? '') ?></td>
-                <td class="actions">
+                <td><span class="badge <?= typeBadge($r['type_article']) ?>"><?= htmlspecialchars($r['type_article'] ?? '—') ?></span></td>
+                <td class="cell-article">
+                    <span class="art-num"><?= htmlspecialchars($r['numero_article']) ?></span>
+                    <span class="art-desc"><?= htmlspecialchars($r['description_article']) ?></span>
+                </td>
+                <td class="text-right num"><?= number_format((int) $r['stock_mag'], 0, ',', ' ') ?></td>
+                <td class="nowrap">
+                    <?php if (!$exp): ?>
+                        <span class="muted">aucune date</span>
+                    <?php elseif ($isExpired): ?>
+                        <span class="date-expired"><?= htmlspecialchars(date('d/m/Y', strtotime($exp))) ?></span>
+                    <?php else: ?>
+                        <?= htmlspecialchars(date('d/m/Y', strtotime($exp))) ?>
+                    <?php endif; ?>
+                </td>
+                <td class="nowrap"><?= htmlspecialchars($r['code_um'] ?? '') ?></td>
+                <td class="text-right num"><?= (int) $r['nbr_palettes'] ?></td>
+                <td class="text-right num"><?= number_format((float) $r['prix_unitaire'], 2, ',', ' ') ?></td>
+                <td class="text-right num"><?= number_format($total, 2, ',', ' ') ?></td>
+                <td class="text-right num"><?= number_format((float) $r['poids_par_carton_kg'], 3, ',', ' ') ?></td>
+                <td class="text-right num"><?= number_format($poids, 2, ',', ' ') ?></td>
+                <td class="nowrap">
+                    <?php if ($r['motif']): ?><span class="badge badge-danger"><?= htmlspecialchars($r['motif']) ?></span><?php endif; ?>
+                    <?php if ($r['responsable']): ?><span class="cell-sub"><?= htmlspecialchars($r['responsable']) ?></span><?php endif; ?>
+                </td>
+                <td class="actions nowrap">
                     <a href="/non_conforme/desinfectant_form.php?id=<?= (int) $r['id'] ?>">Modifier</a>
                     <a href="/non_conforme/desinfectant_delete.php?id=<?= (int) $r['id'] ?>"
                        onclick="return confirm('Supprimer cette ligne ?');">Supprimer</a>
@@ -80,13 +98,13 @@ require_once __DIR__ . '/includes/header.php';
     </tbody>
     <tfoot>
         <tr>
-            <td colspan="6">TOTAL</td>
-            <td class="text-right"><?= $totPal ?></td>
+            <td colspan="5">TOTAL</td>
+            <td class="text-right num"><?= $totPal ?></td>
             <td></td>
-            <td class="text-right"><?= number_format($totValeur, 2, ',', ' ') ?></td>
+            <td class="text-right num"><?= number_format($totValeur, 2, ',', ' ') ?></td>
             <td></td>
-            <td class="text-right"><?= number_format($totKg, 2, ',', ' ') ?></td>
-            <td colspan="3"></td>
+            <td class="text-right num"><?= number_format($totKg, 2, ',', ' ') ?></td>
+            <td colspan="2"></td>
         </tr>
     </tfoot>
 </table>

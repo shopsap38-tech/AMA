@@ -78,6 +78,23 @@ h2 { margin-top: 0; }
 .badge-danger { background: #f8d7da; color: var(--danger); }
 .badge-ok { background: #d1e7dd; color: var(--ok); }
 .badge-warn { background: #fff3cd; color: var(--warn); }
+.badge-type-solution { background: #dbeafe; color: #1e50a2; }
+.badge-type-alcool   { background: #fde7d0; color: #b5651d; }
+.badge-type-gel      { background: #d7f0dd; color: #256b3a; }
+.badge-type-autre    { background: #e9ecef; color: #495057; }
+
+/* Table « claire » : lignes alternées, colonnes lisibles */
+.table-clean td, .table-clean th { padding: 0.7rem 0.85rem; vertical-align: middle; }
+.table-clean tbody tr:nth-child(even) { background: #faf7f7; }
+.table-clean tbody tr:hover { background: #f3e9ea; }
+.table-clean .nowrap { white-space: nowrap; }
+.table-clean .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.table-clean .muted { color: var(--muted); font-style: italic; }
+.table-clean .date-expired { color: var(--danger); font-weight: 600; }
+.cell-article { min-width: 220px; }
+.cell-article .art-num { display: block; font-weight: 700; color: var(--primary-dark); font-size: 0.85rem; }
+.cell-article .art-desc { display: block; color: var(--text); font-size: 0.9rem; }
+.cell-sub { display: block; color: var(--muted); font-size: 0.78rem; margin-top: 0.15rem; }
 
 .actions a { margin-right: 0.6rem; }
 
