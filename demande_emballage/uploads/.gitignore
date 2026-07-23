@@ -1,0 +1,5 @@
+# Ignorer les photos téléversées, conserver le dossier
+*
+!.gitignore
+!.htaccess
+!index.html

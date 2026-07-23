@@ -1,0 +1,5 @@
+# Empêcher l'exécution de scripts dans le dossier des téléversements
+php_flag engine off
+<FilesMatch "\.(php|phtml|php3|php4|php5|phar|pl|py|cgi|asp|sh)$">
+    Require all denied
+</FilesMatch>

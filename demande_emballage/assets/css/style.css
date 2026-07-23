@@ -1,0 +1,89 @@
+/* Demande Emballage — styles complémentaires à Bootstrap 5 */
+
+:root {
+    --de-bg: #f4f6fb;
+}
+
+body.app-body {
+    background-color: var(--de-bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main.container {
+    flex: 1 0 auto;
+    width: 100%;
+}
+
+.app-footer {
+    flex-shrink: 0;
+    border-top: 1px solid #e3e6ee;
+    background: #fff;
+}
+
+/* Cartes de statistiques du tableau de bord */
+.stat-card {
+    border: none;
+    border-radius: 1rem;
+    color: #fff;
+    overflow: hidden;
+}
+.stat-card .stat-value {
+    font-size: 2.4rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.stat-card .stat-label {
+    opacity: .9;
+    font-size: .9rem;
+}
+.stat-card .bi {
+    font-size: 2.5rem;
+    opacity: .35;
+}
+
+/* Écran de connexion */
+.login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    padding: 1rem;
+}
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    border: none;
+    border-radius: 1rem;
+}
+
+/* Miniatures photos */
+.photo-thumb {
+    width: 100%;
+    max-width: 220px;
+    height: auto;
+    border-radius: .5rem;
+    border: 1px solid #dee2e6;
+}
+
+/* Cartes de demande (vue mobile) */
+.demande-card .card-title {
+    font-size: 1.05rem;
+}
+
+/* Rendre les tableaux confortables au tactile */
+.table td, .table th {
+    vertical-align: middle;
+}
+
+@media (max-width: 575.98px) {
+    main.container {
+        padding-left: .75rem;
+        padding-right: .75rem;
+    }
+    .stat-card .stat-value {
+        font-size: 2rem;
+    }
+}
