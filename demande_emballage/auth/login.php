@@ -40,6 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Connexion · Demande Emballage</title>
+    <link rel="icon" type="image/svg+xml" href="<?= e(BASE_URL) ?>/assets/img/logo-mark.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= e(BASE_URL) ?>/assets/img/favicon-32.png">
+    <link rel="apple-touch-icon" href="<?= e(BASE_URL) ?>/assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="<?= e(BASE_URL) ?>/manifest.webmanifest">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(BASE_URL) ?>/assets/css/style.css">
@@ -49,8 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card login-card shadow-lg">
         <div class="card-body p-4 p-sm-5">
             <div class="text-center mb-4">
-                <i class="bi bi-box-seam-fill text-primary" style="font-size:3rem;"></i>
-                <h1 class="h4 mt-2 mb-0">Demande Emballage</h1>
+                <img src="<?= e(BASE_URL) ?>/assets/img/logo-full.svg" alt="Enosis Group"
+                     style="max-width:170px;height:auto;">
+                <h1 class="h5 mt-3 mb-0">Demande Emballage</h1>
                 <p class="text-muted small">Connectez-vous pour continuer</p>
             </div>
 

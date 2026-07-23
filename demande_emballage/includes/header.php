@@ -15,6 +15,11 @@ $role = current_role();
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0d6efd">
     <title><?= e($pageTitle) ?> · Demande Emballage</title>
+    <link rel="icon" type="image/svg+xml" href="<?= e(BASE_URL) ?>/assets/img/logo-mark.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= e(BASE_URL) ?>/assets/img/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= e(BASE_URL) ?>/assets/img/favicon-16.png">
+    <link rel="apple-touch-icon" href="<?= e(BASE_URL) ?>/assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="<?= e(BASE_URL) ?>/manifest.webmanifest">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(BASE_URL) ?>/assets/css/style.css">
@@ -23,8 +28,10 @@ $role = current_role();
 <?php if (is_logged_in()): ?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="<?= e(BASE_URL) ?>/index.php">
-            <i class="bi bi-box-seam-fill"></i> Demande Emballage
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= e(BASE_URL) ?>/index.php">
+            <img src="<?= e(BASE_URL) ?>/assets/img/logo-mark.svg" alt="Enosis Group" height="32" width="32"
+                 class="bg-white rounded-circle p-1">
+            <span>Demande Emballage</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                 aria-controls="mainNav" aria-expanded="false" aria-label="Menu">
