@@ -9,23 +9,25 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     check_csrf();
-    $email    = trim($_POST['email'] ?? '');
+    $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if ($email === '' || $password === '') {
-        $error = 'Veuillez saisir votre e-mail et votre mot de passe.';
+    if ($username === '' || $password === '') {
+        $error = 'Veuillez saisir votre nom d\'utilisateur et votre mot de passe.';
     } else {
-        $stmt = $pdo->prepare('SELECT * FROM utilisateurs WHERE email = ? AND actif = 1 LIMIT 1');
-        $stmt->execute([$email]);
+        // Connexion par nom d'utilisateur (insensible à la casse).
+        $stmt = $pdo->prepare('SELECT * FROM utilisateurs WHERE LOWER(username) = LOWER(?) AND actif = 1 LIMIT 1');
+        $stmt->execute([$username]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['mot_de_passe'])) {
             session_regenerate_id(true);
             $_SESSION['user'] = [
-                'id'   => (int) $user['id'],
-                'nom'  => $user['nom'],
-                'email'=> $user['email'],
-                'role' => $user['role'],
+                'id'       => (int) $user['id'],
+                'username' => $user['username'],
+                'nom'      => $user['nom'],
+                'email'    => $user['email'],
+                'role'     => $user['role'],
             ];
             redirect('/index.php');
         } else {
@@ -66,11 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method="post" novalidate>
                 <?= csrf_field() ?>
                 <div class="mb-3">
-                    <label for="email" class="form-label">Adresse e-mail</label>
+                    <label for="username" class="form-label">Nom d'utilisateur</label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                        <input type="email" class="form-control" id="email" name="email"
-                               value="<?= e($_POST['email'] ?? '') ?>" required autofocus autocomplete="username">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="username" name="username"
+                               value="<?= e($_POST['username'] ?? '') ?>" required autofocus
+                               autocomplete="username" placeholder="Admin, Demandeur, Preparateur…">
                     </div>
                 </div>
                 <div class="mb-4">

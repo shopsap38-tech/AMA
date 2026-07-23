@@ -14,8 +14,9 @@ USE demande_emballage;
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS utilisateurs (
     id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    username      VARCHAR(60)   NOT NULL UNIQUE,
     nom           VARCHAR(150)  NOT NULL,
-    email         VARCHAR(190)  NOT NULL UNIQUE,
+    email         VARCHAR(190)  NULL UNIQUE,
     mot_de_passe  VARCHAR(255)  NOT NULL,
     role          ENUM('administrateur','demandeur','preparateur','facturation') NOT NULL,
     actif         TINYINT(1)    NOT NULL DEFAULT 1,
@@ -90,12 +91,13 @@ CREATE TABLE IF NOT EXISTS historique_statuts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
---  Comptes de démonstration
---  Mot de passe pour TOUS les comptes ci-dessous : "password"
---  (hash bcrypt de "password")
+--  Comptes par défaut
+--  Nom d'utilisateur : Admin / Demandeur / Preparateur / Facturation
+--  Mot de passe pour TOUS les comptes : @2026
+--  (hash bcrypt de "@2026")
 -- ============================================================
-INSERT INTO utilisateurs (nom, email, mot_de_passe, role) VALUES
-    ('Administrateur',   'admin@demo.local',        '$2y$12$Mw9OnmBGrhqJNl7lJZo5ee3RsFnIzxahtptP8tRVzEM8p2aUjjGya', 'administrateur'),
-    ('Demandeur Demo',   'demandeur@demo.local',    '$2y$12$Mw9OnmBGrhqJNl7lJZo5ee3RsFnIzxahtptP8tRVzEM8p2aUjjGya', 'demandeur'),
-    ('Preparateur Demo', 'preparateur@demo.local',  '$2y$12$Mw9OnmBGrhqJNl7lJZo5ee3RsFnIzxahtptP8tRVzEM8p2aUjjGya', 'preparateur'),
-    ('Facturation Demo', 'facturation@demo.local',  '$2y$12$Mw9OnmBGrhqJNl7lJZo5ee3RsFnIzxahtptP8tRVzEM8p2aUjjGya', 'facturation');
+INSERT INTO utilisateurs (username, nom, email, mot_de_passe, role) VALUES
+    ('Admin',       'Administrateur',   'admin@demo.local',       '$2y$12$Ro6xNfT/ubC/Q2NwGV.kMuz4jNcTw5K6xhk5oxzohod.dbKU59UeS', 'administrateur'),
+    ('Demandeur',   'Demandeur',        'demandeur@demo.local',   '$2y$12$Ro6xNfT/ubC/Q2NwGV.kMuz4jNcTw5K6xhk5oxzohod.dbKU59UeS', 'demandeur'),
+    ('Preparateur', 'Préparateur',      'preparateur@demo.local', '$2y$12$Ro6xNfT/ubC/Q2NwGV.kMuz4jNcTw5K6xhk5oxzohod.dbKU59UeS', 'preparateur'),
+    ('Facturation', 'Agent Facturation','facturation@demo.local', '$2y$12$Ro6xNfT/ubC/Q2NwGV.kMuz4jNcTw5K6xhk5oxzohod.dbKU59UeS', 'facturation');

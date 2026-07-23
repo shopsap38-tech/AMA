@@ -20,8 +20,8 @@ require __DIR__ . '/../includes/header.php';
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Nom</th>
-                    <th>E-mail</th>
+                    <th>Nom d'utilisateur</th>
+                    <th>Nom complet</th>
                     <th>Rôle</th>
                     <th>Actif</th>
                     <th class="text-end">Actions</th>
@@ -30,8 +30,8 @@ require __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php foreach ($users as $u): ?>
                     <tr>
-                        <td class="fw-semibold"><?= e($u['nom']) ?></td>
-                        <td><?= e($u['email']) ?></td>
+                        <td class="fw-semibold"><?= e($u['username']) ?></td>
+                        <td><?= e($u['nom']) ?></td>
                         <td><span class="badge bg-primary-subtle text-primary-emphasis"><?= e(role_label($u['role'])) ?></span></td>
                         <td>
                             <?php if ($u['actif']): ?>

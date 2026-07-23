@@ -67,16 +67,16 @@ Les graphiques utilisent [Chart.js](https://www.chartjs.org/).
 L'URL de base est **détectée automatiquement** (`BASE_URL`), l'application fonctionne donc
 aussi bien en sous-dossier qu'en hôte virtuel.
 
-## Comptes de démonstration
+## Comptes par défaut
 
-Mot de passe commun : **`password`**
+Connexion par **nom d'utilisateur**. Mot de passe commun : **`@2026`**
 
-| Rôle              | E-mail                    |
-|-------------------|---------------------------|
-| Administrateur    | `admin@demo.local`        |
-| Demandeur         | `demandeur@demo.local`    |
-| Préparateur       | `preparateur@demo.local`  |
-| Agent Facturation | `facturation@demo.local`  |
+| Rôle              | Nom d'utilisateur |
+|-------------------|-------------------|
+| Administrateur    | `Admin`           |
+| Demandeur         | `Demandeur`       |
+| Préparateur       | `Preparateur`     |
+| Agent Facturation | `Facturation`     |
 
 > ⚠️ En production, changez ces mots de passe (menu **Utilisateurs**) et les identifiants MySQL.
 

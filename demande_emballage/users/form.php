@@ -3,7 +3,7 @@ require_once __DIR__ . '/../config/config.php';
 require_role(['administrateur']);
 
 $id   = (int) ($_GET['id'] ?? 0);
-$user = ['id' => 0, 'nom' => '', 'email' => '', 'role' => 'demandeur', 'actif' => 1];
+$user = ['id' => 0, 'username' => '', 'nom' => '', 'email' => '', 'role' => 'demandeur', 'actif' => 1];
 
 if ($id > 0) {
     $stmt = $pdo->prepare('SELECT * FROM utilisateurs WHERE id = ?');
@@ -30,14 +30,20 @@ require __DIR__ . '/../includes/header.php';
                     <input type="hidden" name="id" value="<?= (int) $user['id'] ?>">
 
                     <div class="mb-3">
+                        <label for="username" class="form-label">Nom d'utilisateur (connexion) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="username" name="username" required
+                               value="<?= e($user['username']) ?>" maxlength="60" autocomplete="off">
+                    </div>
+
+                    <div class="mb-3">
                         <label for="nom" class="form-label">Nom complet <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="nom" name="nom" required
                                value="<?= e($user['nom']) ?>" maxlength="150">
                     </div>
 
                     <div class="mb-3">
-                        <label for="email" class="form-label">Adresse e-mail <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="email" name="email" required
+                        <label for="email" class="form-label">Adresse e-mail <span class="text-muted">(optionnel)</span></label>
+                        <input type="email" class="form-control" id="email" name="email"
                                value="<?= e($user['email']) ?>" maxlength="190">
                     </div>
 
