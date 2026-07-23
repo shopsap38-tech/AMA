@@ -14,6 +14,37 @@ function redirect(string $path): void
     exit;
 }
 
+/**
+ * URL du logo complet à afficher.
+ * Utilise en priorité un fichier fourni par l'utilisateur
+ * (assets/img/logo-original.<ext>), sinon le logo vectoriel par défaut.
+ */
+function logo_full_url(): string
+{
+    $dir = dirname(__DIR__) . '/assets/img';
+    foreach (['png', 'svg', 'webp', 'jpg', 'jpeg'] as $ext) {
+        if (is_file($dir . '/logo-original.' . $ext)) {
+            return BASE_URL . '/assets/img/logo-original.' . $ext;
+        }
+    }
+    return BASE_URL . '/assets/img/logo-full.svg';
+}
+
+/**
+ * URL de la marque seule (icône) pour la barre de navigation.
+ * Utilise assets/img/logo-mark-original.<ext> si présent, sinon la marque par défaut.
+ */
+function logo_mark_url(): string
+{
+    $dir = dirname(__DIR__) . '/assets/img';
+    foreach (['png', 'svg', 'webp', 'jpg', 'jpeg'] as $ext) {
+        if (is_file($dir . '/logo-mark-original.' . $ext)) {
+            return BASE_URL . '/assets/img/logo-mark-original.' . $ext;
+        }
+    }
+    return BASE_URL . '/assets/img/logo-mark.svg';
+}
+
 /** L'utilisateur est-il connecté ? */
 function is_logged_in(): bool
 {

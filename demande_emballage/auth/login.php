@@ -55,8 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card login-card shadow-lg">
         <div class="card-body p-4 p-sm-5">
             <div class="text-center mb-4">
-                <img src="<?= e(BASE_URL) ?>/assets/img/logo-full.svg" alt="Enosis Group"
-                     style="max-width:170px;height:auto;">
+                <img src="<?= e(logo_full_url()) ?>" alt="Enosis Group"
+                     style="max-width:190px;height:auto;">
                 <h1 class="h5 mt-3 mb-0">Demande Emballage</h1>
                 <p class="text-muted small">Connectez-vous pour continuer</p>
             </div>

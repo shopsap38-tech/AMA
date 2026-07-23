@@ -29,8 +29,8 @@ $role = current_role();
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= e(BASE_URL) ?>/index.php">
-            <img src="<?= e(BASE_URL) ?>/assets/img/logo-mark.svg" alt="Enosis Group" height="32" width="32"
-                 class="bg-white rounded-circle p-1">
+            <img src="<?= e(logo_mark_url()) ?>" alt="Enosis Group" height="34"
+                 class="bg-white rounded p-1" style="width:auto;max-height:34px;">
             <span>Demande Emballage</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
