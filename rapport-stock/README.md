@@ -120,7 +120,32 @@ const DB_PASS = '1AQWXCV';
 
 Ouvrez `http://localhost/rapport-stock/test.php` : la page vérifie, selon le
 mode, la présence/lecture du CSV **ou** l'extension PHP, le pilote ODBC et la
-connexion. Supprimez `test.php` une fois le diagnostic terminé.
+connexion. En mode `ado`, elle **chronomètre** la connexion et la lecture pour
+localiser une lenteur. Supprimez `test.php` une fois le diagnostic terminé.
+
+## Performance
+
+Le mode `ado` (OLE DB/COM) est pratique car il ne demande aucun pilote ODBC,
+mais il est intrinsèquement plus lent que `pdo_sqlsrv`. Optimisations déjà en
+place :
+
+- **Restriction poussée dans SQL** : la clause `WHERE [Magasin] = …`
+  (constante `MAGASIN_FILTRE`) est ajoutée à la requête, donc SQL Server ne
+  renvoie que les lignes utiles au lieu de toute la vue.
+- **Objets Field mis en cache** : en mode `ado`, les colonnes sont résolues une
+  seule fois puis relues par référence à chaque ligne (évite une résolution COM
+  par cellule, principal coût de lenteur).
+
+Pour aller plus loin :
+
+1. **Figer le fournisseur OLE DB.** Si `test.php` indique que le fournisseur
+   retenu n'est pas le premier essayé, remplacez `ADO_PROVIDER = 'auto'` par le
+   fournisseur réel (ex. `'SQLOLEDB'`) : on évite d'essayer à chaque page des
+   fournisseurs absents.
+2. **Passer en `pdo_sqlsrv` (le plus rapide).** Si vous pouvez installer le
+   pilote **ODBC Driver 18 for SQL Server**, mettez `DATA_SOURCE = 'sqlserver'`.
+   C'est nettement plus performant que COM/OLE DB. Le reste du code est déjà
+   prêt (même requête, même restriction magasin).
 
 ## Installation avec Laragon
 

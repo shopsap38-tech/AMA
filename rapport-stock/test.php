@@ -121,18 +121,39 @@ if (DATA_SOURCE === 'ado') {
     }
 
     if ($aCom) {
-        // 2) Ouverture de la connexion OLE DB
+        // 2) Ouverture de la connexion OLE DB (chronométrée)
         try {
+            $t0 = microtime(true);
             [$conn, $prov] = open_ado_connection();
-            etape('2. Connexion OLE DB établie', true,
-                'Fournisseur utilisé : ' . $prov . ' (aucun pilote ODBC requis).');
+            $msConn = (microtime(true) - $t0) * 1000;
             $conn->Close();
 
-            // 3) Lecture de la vue
+            etape('2. Connexion OLE DB établie', true, sprintf(
+                "Fournisseur utilisé : %s\nTemps de connexion : %.0f ms%s",
+                $prov, $msConn,
+                (ADO_PROVIDER === 'auto' && $prov !== 'MSOLEDBSQL')
+                    ? "\n\nAstuce perf : figez ce fournisseur dans config/database.php\n"
+                      . "   const ADO_PROVIDER = '" . $prov . "';\n"
+                      . "pour éviter d'essayer les fournisseurs absents à chaque page."
+                    : ''
+            ));
+
+            // 3) Lecture de la vue (chronométrée)
             try {
+                $t1 = microtime(true);
                 $lignes = charger_toutes_lignes();
-                etape('3. Lecture de la vue [dbo].[V_BH_STGlob]', true,
-                    count($lignes) . ' ligne(s) lue(s). Tout est bon — ouvrez index.php.');
+                $msLect = (microtime(true) - $t1) * 1000;
+
+                $scope = (defined('MAGASIN_FILTRE') && MAGASIN_FILTRE !== '')
+                    ? ' (restreint au magasin ' . MAGASIN_FILTRE . ')' : '';
+
+                etape('3. Lecture de la vue [dbo].[V_BH_STGlob]', true, sprintf(
+                    "%d ligne(s) lue(s)%s.\nTemps de lecture : %.0f ms\n\n%s",
+                    count($lignes), $scope, $msLect,
+                    $msConn > $msLect
+                        ? "→ Le temps est dominé par la CONNEXION : figez ADO_PROVIDER (voir étape 2)."
+                        : "→ Le temps est dominé par la LECTURE : la restriction magasin réduit déjà les lignes ; pour aller plus vite encore, envisagez le mode pdo_sqlsrv."
+                ));
             } catch (Throwable $e) {
                 etape('3. Lecture de la vue [dbo].[V_BH_STGlob]', false, $e->getMessage());
             }

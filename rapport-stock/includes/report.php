@@ -64,14 +64,34 @@ function charger_toutes_lignes(): array
         $lignes = charger_depuis_csv();
     }
 
-    // Restriction éventuelle à un seul magasin (config MAGASIN_FILTRE).
-    if (defined('MAGASIN_FILTRE') && MAGASIN_FILTRE !== '') {
+    // En mode CSV, la restriction magasin est appliquée ici (les modes SQL/ADO
+    // la poussent déjà dans la requête pour ne transférer que les lignes utiles).
+    if (DATA_SOURCE === 'csv' && defined('MAGASIN_FILTRE') && MAGASIN_FILTRE !== '') {
         $lignes = array_values(array_filter($lignes, static function ($l) {
             return (string) ($l['Magasin'] ?? '') === MAGASIN_FILTRE;
         }));
     }
 
     return $lignes;
+}
+
+/** Liste des colonnes de la vue, entre crochets, pour un SELECT. */
+function colonnes_sql(): string
+{
+    return '[' . implode('], [', COLONNES) . ']';
+}
+
+/**
+ * Clause WHERE (inline) restreignant au magasin configuré, ou '' si aucun.
+ * MAGASIN_FILTRE est une constante de configuration (pas une saisie utilisateur) ;
+ * les apostrophes sont malgré tout échappées par sécurité.
+ */
+function where_magasin_sql(): string
+{
+    if (!defined('MAGASIN_FILTRE') || MAGASIN_FILTRE === '') {
+        return '';
+    }
+    return " WHERE [Magasin] = '" . str_replace("'", "''", MAGASIN_FILTRE) . "'";
 }
 
 /**
@@ -84,29 +104,37 @@ function charger_depuis_ado(): array
 {
     [$conn] = open_ado_connection();
 
-    $sql = 'SELECT [Magasin], [Item Code], [Item Name], [Disponible], [UoM],
-                   [CodeBars], [InActif], [Poids], [Price], [Value], [U_u_forcast],
-                   [U_Qte_Palette], [U_u_cat], [U_u_brand]
-            FROM [dbo].[V_BH_STGlob]';
+    $sql = 'SELECT ' . colonnes_sql() . ' FROM [dbo].[V_BH_STGlob]' . where_magasin_sql();
 
     try {
+        // Curseur avant-seulement / lecture seule (le plus rapide en lecture).
         $rs = $conn->Execute($sql);
 
         $lignes = [];
-        while (!$rs->EOF) {
-            $ligne = [];
+        if (!$rs->EOF) {
+            // Optimisation : on résout les objets Field UNE seule fois (par nom),
+            // puis on ne lit que leur ->Value à chaque ligne. Évite une coûteuse
+            // résolution COM par cellule (14 colonnes × N lignes).
+            $fields = [];
             foreach (COLONNES as $col) {
-                $val = $rs->Fields->Item($col)->Value;
-                if ($val === null) {
-                    $ligne[$col] = null;
-                } elseif (in_array($col, COLONNES_NUM, true)) {
-                    $ligne[$col] = (float) $val;
-                } else {
-                    $ligne[$col] = (string) $val;
-                }
+                $fields[$col] = $rs->Fields->Item($col);
             }
-            $lignes[] = $ligne;
-            $rs->MoveNext();
+
+            while (!$rs->EOF) {
+                $ligne = [];
+                foreach ($fields as $col => $field) {
+                    $val = $field->Value;
+                    if ($val === null) {
+                        $ligne[$col] = null;
+                    } elseif (in_array($col, COLONNES_NUM, true)) {
+                        $ligne[$col] = (float) $val;
+                    } else {
+                        $ligne[$col] = (string) $val;
+                    }
+                }
+                $lignes[] = $ligne;
+                $rs->MoveNext();
+            }
         }
         $rs->Close();
     } catch (Throwable $e) {
@@ -121,17 +149,22 @@ function charger_depuis_ado(): array
 }
 
 /**
- * Lecture directe de la vue SQL Server.
+ * Lecture directe de la vue SQL Server (PDO sqlsrv/dblib).
  *
  * @return array<int, array<string, mixed>>
  */
 function charger_depuis_sqlserver(): array
 {
     $pdo = get_pdo();
-    $sql = 'SELECT [Magasin], [Item Code], [Item Name], [Disponible], [UoM],
-                   [CodeBars], [InActif], [Poids], [Price], [Value], [U_u_forcast],
-                   [U_Qte_Palette], [U_u_cat], [U_u_brand]
-            FROM [dbo].[V_BH_STGlob]';
+    $sql = 'SELECT ' . colonnes_sql() . ' FROM [dbo].[V_BH_STGlob]';
+
+    if (defined('MAGASIN_FILTRE') && MAGASIN_FILTRE !== '') {
+        $sql .= ' WHERE [Magasin] = :magasin';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':magasin' => MAGASIN_FILTRE]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -149,7 +182,7 @@ function charger_depuis_csv(): array
     if (!is_file($fichier)) {
         throw new RuntimeException(
             "Fichier CSV introuvable :\n" . $fichier . "\n\n"
-            . "Exportez la vue [dbo].[V_BH_STockTracking] en CSV et placez le "
+            . "Exportez la vue [dbo].[V_BH_STGlob] en CSV et placez le "
             . "fichier à cet emplacement (voir README, section « Mode CSV »)."
         );
     }
