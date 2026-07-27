@@ -87,6 +87,58 @@ if (DATA_SOURCE === 'csv') {
 }
 
 // ============================================================================
+// MODE pdo_odbc (pilote ODBC « SQL Server » intégré à Windows)
+// ============================================================================
+if (DATA_SOURCE === 'pdo_odbc') {
+    echo '<p style="color:#616e7c">Serveur <code>' . htmlspecialchars(DB_HOST) . ':' . DB_PORT
+        . '</code> — base <code>' . htmlspecialchars(DB_NAME) . '</code> — pilote <code>'
+        . htmlspecialchars(PDO_ODBC_DRIVER) . '</code></p>';
+
+    // 1) Extension pdo_odbc
+    $aOdbc = in_array('odbc', PDO::getAvailableDrivers(), true);
+    etape('1. Extension PHP pdo_odbc disponible', $aOdbc,
+        $aOdbc ? 'OK.' : "Absente. Activez « extension=pdo_odbc » dans php.ini (voir chemin ci-dessous), "
+            . "puis redémarrez Apache.\nPilotes PDO présents : "
+            . implode(', ', PDO::getAvailableDrivers() ?: ['aucun']) . '.');
+
+    if (!$aOdbc) {
+        etape('   → Où activer pdo_odbc', false,
+            "php.ini chargé par CE PHP (celui d'Apache) :\n   " . (php_ini_loaded_file() ?: '(inconnu)') . "\n"
+            . "Décommentez « extension=pdo_odbc », enregistrez, puis redémarrez Apache.");
+    } else {
+        // 2) Connexion via le pilote intégré (chronométrée)
+        try {
+            $t0 = microtime(true);
+            [$pdo, $drv] = open_pdo_odbc();
+            $msConn = (microtime(true) - $t0) * 1000;
+            etape('2. Connexion pdo_odbc établie', true, sprintf(
+                "Pilote ODBC utilisé : {%s}\nTemps de connexion : %.0f ms", $drv, $msConn));
+
+            // 3) Lecture de la vue (chronométrée)
+            try {
+                $t1 = microtime(true);
+                $lignes = charger_toutes_lignes();
+                $msLect = (microtime(true) - $t1) * 1000;
+                $scope = (defined('MAGASIN_FILTRE') && MAGASIN_FILTRE !== '')
+                    ? ' (restreint au magasin ' . MAGASIN_FILTRE . ')' : '';
+                etape('3. Lecture de la vue [dbo].[V_BH_STGlob]', true, sprintf(
+                    "%d ligne(s) lue(s)%s.\nTemps de lecture : %.0f ms\nTout est bon — ouvrez index.php.",
+                    count($lignes), $scope, $msLect));
+            } catch (Throwable $e) {
+                etape('3. Lecture de la vue [dbo].[V_BH_STGlob]', false, $e->getMessage());
+            }
+        } catch (Throwable $e) {
+            etape('2. Connexion pdo_odbc établie', false, $e->getMessage());
+        }
+    }
+
+    echo '<p style="color:#97a3af;font-size:.85rem;margin-top:2rem">'
+        . 'Pensez à supprimer <code>test.php</code> une fois le diagnostic terminé.</p>';
+    echo '</body></html>';
+    exit;
+}
+
+// ============================================================================
 // MODE ADO / OLE DB (SQL Server sans ODBC)
 // ============================================================================
 if (DATA_SOURCE === 'ado') {

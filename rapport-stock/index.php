@@ -67,6 +67,11 @@ require_once __DIR__ . '/includes/header.php';
             <code>com_dotnet</code> est activée dans <code>php.ini</code>, le nom de la base
             <code>DB_NAME</code>, les identifiants, et l'accès réseau à
             <?= htmlspecialchars(DB_HOST) ?>. Diagnostic détaillé : <code>test.php</code>.</p>
+    <?php elseif (DATA_SOURCE === 'pdo_odbc'): ?>
+        <p class="hint">Mode <strong>pdo_odbc (pilote « SQL Server » intégré)</strong> :
+            vérifiez que l'extension <code>pdo_odbc</code> est activée dans <code>php.ini</code>,
+            le nom de la base <code>DB_NAME</code>, les identifiants, et l'accès réseau à
+            <?= htmlspecialchars(DB_HOST) ?>. Diagnostic détaillé : <code>test.php</code>.</p>
     <?php else: ?>
         <p class="hint">Mode <strong>SQL Server</strong> : vérifiez les paramètres dans
             <code>config/database.php</code> (nom de la base <code>DB_NAME</code>, pilote ODBC/PDO

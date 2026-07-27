@@ -2,22 +2,24 @@
 /**
  * Configuration de la source de données du rapport de suivi de stock.
  *
- * Trois modes possibles (constante DATA_SOURCE) :
+ * Quatre modes possibles (constante DATA_SOURCE) :
  *
- *   'ado'       -> connexion DIRECTE à SQL Server via OLE DB / COM (ADODB),
- *                  SANS le pilote ODBC Microsoft. Utilise le fournisseur
- *                  SQLOLEDB intégré à Windows. Nécessite l'extension PHP
- *                  com_dotnet (fournie avec PHP sous Windows). RECOMMANDÉ ici.
+ *   'ado'       -> connexion DIRECTE via OLE DB / COM (ADODB), SANS pilote ODBC.
+ *                  Fournisseur SQLOLEDB intégré à Windows. Extension : com_dotnet.
+ *
+ *   'pdo_odbc'  -> connexion DIRECTE via le pilote ODBC « SQL Server » INTÉGRÉ à
+ *                  Windows (MDAC), donc SANS télécharger le pilote ODBC x64.
+ *                  Extension : pdo_odbc.
  *
  *   'csv'       -> l'application lit un fichier CSV exporté depuis SQL Server
  *                  (aucune connexion ni pilote nécessaire).
  *
- *   'sqlserver' -> connexion directe via PDO (nécessite le pilote ODBC
- *                  Microsoft + l'extension pdo_sqlsrv).
+ *   'sqlserver' -> connexion directe via PDO sqlsrv (nécessite le pilote ODBC
+ *                  Driver 18 de Microsoft à télécharger — le plus performant).
  */
 
 // ---- Choix de la source -----------------------------------------------------
-const DATA_SOURCE = 'ado'; // 'ado', 'csv' ou 'sqlserver'
+const DATA_SOURCE = 'ado'; // 'ado', 'pdo_odbc', 'csv' ou 'sqlserver'
 // -----------------------------------------------------------------------------
 
 // ---- Restriction magasin ----------------------------------------------------
@@ -31,6 +33,14 @@ const MAGASIN_FILTRE = 'MAG_FMCG';
 //   MSOLEDBSQL (récent) -> SQLNCLI11 (Native Client) -> SQLOLEDB (intégré Windows).
 // SQLOLEDB est présent sur tout Windows : aucune installation nécessaire.
 const ADO_PROVIDER = 'auto'; // 'auto', 'MSOLEDBSQL', 'SQLNCLI11' ou 'SQLOLEDB'
+// -----------------------------------------------------------------------------
+
+// ---- Mode pdo_odbc (SQL Server via pilote ODBC intégré à Windows) ------------
+// Pilote ODBC utilisé. 'auto' teste dans l'ordre :
+//   {SQL Server} (intégré à Windows, aucun téléchargement)
+//   -> {SQL Server Native Client 11.0} -> {ODBC Driver 17 for SQL Server}.
+// Le pilote « SQL Server » (MDAC) est présent d'origine sur tout Windows.
+const PDO_ODBC_DRIVER = 'auto'; // 'auto' ou un nom exact, ex. 'SQL Server'
 // -----------------------------------------------------------------------------
 
 // ---- Mode CSV ---------------------------------------------------------------
@@ -140,5 +150,51 @@ function open_ado_connection(): array
     throw new RuntimeException(
         "Connexion OLE DB à SQL Server impossible (" . DB_HOST . ").\n"
         . "Fournisseurs testés :\n" . implode("\n", $errors)
+    );
+}
+
+/**
+ * Ouvre une connexion PDO vers SQL Server via le pilote ODBC « SQL Server »
+ * INTÉGRÉ à Windows (MDAC), sans télécharger le pilote ODBC x64 de Microsoft.
+ *
+ * @return array{0:PDO, 1:string} La connexion PDO et le pilote ODBC utilisé.
+ * @throws RuntimeException
+ */
+function open_pdo_odbc(): array
+{
+    if (!in_array('odbc', PDO::getAvailableDrivers(), true)) {
+        throw new RuntimeException(
+            "L'extension PHP « pdo_odbc » n'est pas activée.\n"
+            . "Activez « extension=pdo_odbc » dans php.ini puis redémarrez Apache.\n"
+            . "Pilotes PDO présents : " . implode(', ', PDO::getAvailableDrivers() ?: ['aucun']) . '.'
+        );
+    }
+
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ];
+
+    // Pilotes ODBC essayés : le pilote « SQL Server » intégré d'abord.
+    $pilotes = PDO_ODBC_DRIVER === 'auto'
+        ? ['SQL Server', 'SQL Server Native Client 11.0', 'ODBC Driver 17 for SQL Server', 'ODBC Driver 18 for SQL Server']
+        : [PDO_ODBC_DRIVER];
+
+    $errors = [];
+    foreach ($pilotes as $drv) {
+        try {
+            $dsn = sprintf(
+                'odbc:Driver={%s};Server=%s,%d;Database=%s;Uid=%s;Pwd=%s;TrustServerCertificate=yes;',
+                $drv, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
+            );
+            return [new PDO($dsn, null, null, $options), $drv];
+        } catch (PDOException $e) {
+            $errors[] = '{' . $drv . '} : ' . $e->getMessage();
+        }
+    }
+
+    throw new RuntimeException(
+        "Connexion pdo_odbc à SQL Server impossible (" . DB_HOST . ").\n"
+        . "Pilotes ODBC essayés :\n" . implode("\n", $errors)
     );
 }

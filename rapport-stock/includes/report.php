@@ -58,6 +58,8 @@ function charger_toutes_lignes(): array
 {
     if (DATA_SOURCE === 'ado') {
         $lignes = charger_depuis_ado();
+    } elseif (DATA_SOURCE === 'pdo_odbc') {
+        $lignes = charger_depuis_pdo_odbc();
     } elseif (DATA_SOURCE === 'sqlserver') {
         $lignes = charger_depuis_sqlserver();
     } else {
@@ -155,7 +157,29 @@ function charger_depuis_ado(): array
  */
 function charger_depuis_sqlserver(): array
 {
-    $pdo = get_pdo();
+    return charger_via_pdo(get_pdo());
+}
+
+/**
+ * Lecture via le pilote ODBC « SQL Server » intégré à Windows (pdo_odbc),
+ * sans télécharger le pilote ODBC x64 de Microsoft.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function charger_depuis_pdo_odbc(): array
+{
+    [$pdo] = open_pdo_odbc();
+    return charger_via_pdo($pdo);
+}
+
+/**
+ * Exécute la requête de la vue sur une connexion PDO donnée, en appliquant
+ * la restriction magasin côté serveur.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function charger_via_pdo(PDO $pdo): array
+{
     $sql = 'SELECT ' . colonnes_sql() . ' FROM [dbo].[V_BH_STGlob]';
 
     if (defined('MAGASIN_FILTRE') && MAGASIN_FILTRE !== '') {

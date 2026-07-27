@@ -16,15 +16,22 @@ SQL Server `[dbo].[V_BH_STGlob]` (base SAP Business One) hébergée sur
 - **Export CSV** (compatible Excel : séparateur `;` + BOM UTF-8).
 - **Impression** propre (bouton « Imprimer »).
 
-## Trois modes de fonctionnement
+## Quatre modes de fonctionnement
 
-Le mode est choisi par la constante `DATA_SOURCE` en haut de `config/database.php` :
+Le mode est choisi par la constante `DATA_SOURCE` en haut de `config/database.php`.
+Trois d'entre eux se connectent à SQL Server **sans télécharger le pilote ODBC x64** :
 
-| Mode | `DATA_SOURCE` | Pilote requis | Données |
-|------|---------------|---------------|---------|
-| **OLE DB / COM** (par défaut) | `'ado'` | **aucun** (SQLOLEDB intégré à Windows) + extension `com_dotnet` | temps réel |
-| **CSV** | `'csv'` | **aucun** | fichier exporté, à rafraîchir manuellement |
-| **SQL Server (PDO)** | `'sqlserver'` | pilote ODBC Microsoft + `pdo_sqlsrv` | temps réel |
+| Mode | `DATA_SOURCE` | Pilote requis | Extension PHP | Données |
+|------|---------------|---------------|---------------|---------|
+| **OLE DB / COM** (défaut) | `'ado'` | **aucun** (SQLOLEDB intégré) | `com_dotnet` | temps réel |
+| **ODBC intégré** | `'pdo_odbc'` | **aucun** (pilote « SQL Server » intégré) | `pdo_odbc` | temps réel |
+| **CSV** | `'csv'` | **aucun** | aucune | fichier exporté |
+| **SQL Server (rapide)** | `'sqlserver'` | ODBC Driver 18 (à télécharger) | `pdo_sqlsrv` | temps réel |
+
+> Les modes `ado` et `pdo_odbc` évitent tous deux le téléchargement du pilote
+> ODBC x64 : ils s'appuient sur des composants **déjà présents dans Windows**.
+> Ils diffèrent seulement par l'extension PHP à activer (`com_dotnet` ou
+> `pdo_odbc`) — choisissez celle qui est disponible chez vous.
 
 ---
 
@@ -49,6 +56,25 @@ Le fournisseur est choisi par `ADO_PROVIDER` :
 
 > Diagnostic : ouvrez `test.php` — il indique si `com_dotnet` est présent, quel
 > fournisseur OLE DB a répondu, et combien de lignes la vue renvoie.
+
+---
+
+## Mode ODBC intégré (temps réel, SANS télécharger le pilote ODBC x64)
+
+Alternative au mode `ado` si l'extension `com_dotnet` n'est pas activable.
+Utilise le pilote ODBC **« SQL Server »** livré d'origine avec Windows (MDAC) —
+à ne pas confondre avec « ODBC Driver 17/18 for SQL Server » qui, lui, se
+télécharge.
+
+1. Activez l'extension **`pdo_odbc`** dans le `php.ini` de Laragon
+   (`extension=pdo_odbc`), puis redémarrez Apache.
+2. Dans `config/database.php`, mettez `DATA_SOURCE = 'pdo_odbc'` et renseignez
+   `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`.
+3. Ouvrez `http://localhost/rapport-stock/` (ou d'abord `test.php`).
+
+`PDO_ODBC_DRIVER = 'auto'` essaie `{SQL Server}` (intégré) puis les Native
+Client / ODBC Driver éventuellement présents. Vous pouvez forcer un pilote
+précis.
 
 ---
 
