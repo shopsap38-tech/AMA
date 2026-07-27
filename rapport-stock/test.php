@@ -87,6 +87,48 @@ if (DATA_SOURCE === 'csv') {
 }
 
 // ============================================================================
+// MODE ADO / OLE DB (SQL Server sans ODBC)
+// ============================================================================
+if (DATA_SOURCE === 'ado') {
+    echo '<p style="color:#616e7c">Serveur <code>' . htmlspecialchars(DB_HOST) . ':' . DB_PORT
+        . '</code> — base <code>' . htmlspecialchars(DB_NAME) . '</code> — fournisseur <code>'
+        . htmlspecialchars(ADO_PROVIDER) . '</code></p>';
+
+    // 1) Extension com_dotnet
+    $aCom = class_exists('COM');
+    etape('1. Extension PHP com_dotnet disponible', $aCom,
+        $aCom ? 'OK (connexion OLE DB possible sans pilote ODBC).'
+              : "Absente. Activez « extension=com_dotnet » dans php.ini puis redémarrez Apache.\n"
+                . "(Disponible uniquement sous Windows.)");
+
+    if ($aCom) {
+        // 2) Ouverture de la connexion OLE DB
+        try {
+            [$conn, $prov] = open_ado_connection();
+            etape('2. Connexion OLE DB établie', true,
+                'Fournisseur utilisé : ' . $prov . ' (aucun pilote ODBC requis).');
+            $conn->Close();
+
+            // 3) Lecture de la vue
+            try {
+                $lignes = charger_toutes_lignes();
+                etape('3. Lecture de la vue [dbo].[V_BH_STGlob]', true,
+                    count($lignes) . ' ligne(s) lue(s). Tout est bon — ouvrez index.php.');
+            } catch (Throwable $e) {
+                etape('3. Lecture de la vue [dbo].[V_BH_STGlob]', false, $e->getMessage());
+            }
+        } catch (Throwable $e) {
+            etape('2. Connexion OLE DB établie', false, $e->getMessage());
+        }
+    }
+
+    echo '<p style="color:#97a3af;font-size:.85rem;margin-top:2rem">'
+        . 'Pensez à supprimer <code>test.php</code> une fois le diagnostic terminé.</p>';
+    echo '</body></html>';
+    exit;
+}
+
+// ============================================================================
 // MODE SQL SERVER
 // ============================================================================
 echo '<p style="color:#616e7c">Serveur <code>' . htmlspecialchars(DB_HOST) . ':' . DB_PORT

@@ -62,6 +62,11 @@ require_once __DIR__ . '/includes/header.php';
         <p class="hint">Mode <strong>CSV</strong> : vérifiez que le fichier
             <code><?= htmlspecialchars(CSV_FILE) ?></code> existe et contient l'export de la vue.
             Voir le README, section « Mode CSV ».</p>
+    <?php elseif (DATA_SOURCE === 'ado'): ?>
+        <p class="hint">Mode <strong>OLE DB (sans ODBC)</strong> : vérifiez que l'extension
+            <code>com_dotnet</code> est activée dans <code>php.ini</code>, le nom de la base
+            <code>DB_NAME</code>, les identifiants, et l'accès réseau à
+            <?= htmlspecialchars(DB_HOST) ?>. Diagnostic détaillé : <code>test.php</code>.</p>
     <?php else: ?>
         <p class="hint">Mode <strong>SQL Server</strong> : vérifiez les paramètres dans
             <code>config/database.php</code> (nom de la base <code>DB_NAME</code>, pilote ODBC/PDO

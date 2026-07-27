@@ -16,20 +16,45 @@ SQL Server `[dbo].[V_BH_STGlob]` (base SAP Business One) hébergée sur
 - **Export CSV** (compatible Excel : séparateur `;` + BOM UTF-8).
 - **Impression** propre (bouton « Imprimer »).
 
-## Deux modes de fonctionnement
+## Trois modes de fonctionnement
 
 Le mode est choisi par la constante `DATA_SOURCE` en haut de `config/database.php` :
 
 | Mode | `DATA_SOURCE` | Pilote requis | Données |
 |------|---------------|---------------|---------|
-| **CSV** (par défaut) | `'csv'` | **aucun** | fichier exporté, à rafraîchir manuellement |
-| **SQL Server** | `'sqlserver'` | pilote ODBC Microsoft + `pdo_sqlsrv` | temps réel |
+| **OLE DB / COM** (par défaut) | `'ado'` | **aucun** (SQLOLEDB intégré à Windows) + extension `com_dotnet` | temps réel |
+| **CSV** | `'csv'` | **aucun** | fichier exporté, à rafraîchir manuellement |
+| **SQL Server (PDO)** | `'sqlserver'` | pilote ODBC Microsoft + `pdo_sqlsrv` | temps réel |
 
 ---
 
-## Mode CSV (recommandé — aucun pilote à installer)
+## Mode OLE DB / COM (temps réel, SANS pilote ODBC)
 
-Idéal si le pilote ODBC Microsoft n'est pas installé sur le serveur PHP.
+Connexion directe à SQL Server **sans installer le pilote ODBC de Microsoft**.
+PHP utilise le fournisseur **OLE DB** via COM/ADODB. Le fournisseur `SQLOLEDB`
+est intégré à Windows : rien à installer côté base.
+
+1. Vérifiez que l'extension **`com_dotnet`** est activée dans le `php.ini` de
+   Laragon (ligne `extension=com_dotnet` non commentée), puis redémarrez Apache.
+2. Dans `config/database.php`, laissez `DATA_SOURCE = 'ado'` et renseignez
+   `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`.
+3. Ouvrez `http://localhost/rapport-stock/`.
+
+Le fournisseur est choisi par `ADO_PROVIDER` :
+
+- `'auto'` (défaut) essaie dans l'ordre `MSOLEDBSQL` → `SQLNCLI11` → `SQLOLEDB`.
+  `SQLOLEDB` étant présent sur tout Windows, la connexion aboutit sans
+  installation supplémentaire.
+- Vous pouvez forcer un fournisseur précis (ex. `'SQLOLEDB'`).
+
+> Diagnostic : ouvrez `test.php` — il indique si `com_dotnet` est présent, quel
+> fournisseur OLE DB a répondu, et combien de lignes la vue renvoie.
+
+---
+
+## Mode CSV (aucun pilote, données figées)
+
+Idéal s'il n'est pas possible d'ouvrir une connexion directe.
 
 1. Dans **SSMS** (SQL Server Management Studio) ou dans SAP, exécutez la requête
    de la vue puis exportez le résultat en **CSV** :
@@ -95,7 +120,7 @@ connexion. Supprimez `test.php` une fois le diagnostic terminé.
 ```
 rapport-stock/
 ├── assets/style.css        Feuille de style (écran + impression)
-├── config/database.php     Choix de la source (CSV / SQL Server)
+├── config/database.php     Choix de la source (OLE DB / CSV / SQL Server) + connexions
 ├── data/stock.csv          Fichier de données (mode CSV) — exemple fourni
 ├── includes/header.php     En-tête commun
 ├── includes/footer.php     Pied de page commun

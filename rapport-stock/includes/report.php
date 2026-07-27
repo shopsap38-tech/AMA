@@ -56,10 +56,59 @@ function lire_filtres(): array
  */
 function charger_toutes_lignes(): array
 {
+    if (DATA_SOURCE === 'ado') {
+        return charger_depuis_ado();
+    }
     if (DATA_SOURCE === 'sqlserver') {
         return charger_depuis_sqlserver();
     }
     return charger_depuis_csv();
+}
+
+/**
+ * Lecture de la vue via OLE DB / COM (ADODB), sans pilote ODBC (Windows).
+ *
+ * @return array<int, array<string, mixed>>
+ * @throws RuntimeException
+ */
+function charger_depuis_ado(): array
+{
+    [$conn] = open_ado_connection();
+
+    $sql = 'SELECT [Magasin], [Item Code], [Item Name], [Disponible], [UoM],
+                   [CodeBars], [InActif], [Poids], [Price], [Value], [U_u_forcast],
+                   [U_Qte_Palette], [U_u_cat], [U_u_brand]
+            FROM [dbo].[V_BH_STGlob]';
+
+    try {
+        $rs = $conn->Execute($sql);
+
+        $lignes = [];
+        while (!$rs->EOF) {
+            $ligne = [];
+            foreach (COLONNES as $col) {
+                $val = $rs->Fields->Item($col)->Value;
+                if ($val === null) {
+                    $ligne[$col] = null;
+                } elseif (in_array($col, COLONNES_NUM, true)) {
+                    $ligne[$col] = (float) $val;
+                } else {
+                    $ligne[$col] = (string) $val;
+                }
+            }
+            $lignes[] = $ligne;
+            $rs->MoveNext();
+        }
+        $rs->Close();
+    } catch (Throwable $e) {
+        throw new RuntimeException(
+            "Erreur lors de la lecture de [dbo].[V_BH_STGlob] via OLE DB :\n" . $e->getMessage()
+        );
+    } finally {
+        $conn->Close();
+    }
+
+    return $lignes;
 }
 
 /**

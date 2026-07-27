@@ -2,18 +2,29 @@
 /**
  * Configuration de la source de données du rapport de suivi de stock.
  *
- * Deux modes possibles (constante DATA_SOURCE) :
+ * Trois modes possibles (constante DATA_SOURCE) :
+ *
+ *   'ado'       -> connexion DIRECTE à SQL Server via OLE DB / COM (ADODB),
+ *                  SANS le pilote ODBC Microsoft. Utilise le fournisseur
+ *                  SQLOLEDB intégré à Windows. Nécessite l'extension PHP
+ *                  com_dotnet (fournie avec PHP sous Windows). RECOMMANDÉ ici.
  *
  *   'csv'       -> l'application lit un fichier CSV exporté depuis SQL Server
- *                  (aucune connexion ni pilote nécessaire). RECOMMANDÉ si le
- *                  pilote ODBC Microsoft n'est pas installé.
+ *                  (aucune connexion ni pilote nécessaire).
  *
- *   'sqlserver' -> connexion directe à SQL Server via PDO (nécessite le pilote
- *                  ODBC Microsoft + l'extension pdo_sqlsrv).
+ *   'sqlserver' -> connexion directe via PDO (nécessite le pilote ODBC
+ *                  Microsoft + l'extension pdo_sqlsrv).
  */
 
 // ---- Choix de la source -----------------------------------------------------
-const DATA_SOURCE = 'csv'; // 'csv' ou 'sqlserver'
+const DATA_SOURCE = 'ado'; // 'ado', 'csv' ou 'sqlserver'
+// -----------------------------------------------------------------------------
+
+// ---- Mode ADO / OLE DB (SQL Server sans ODBC) -------------------------------
+// Fournisseur OLE DB. 'auto' teste dans l'ordre :
+//   MSOLEDBSQL (récent) -> SQLNCLI11 (Native Client) -> SQLOLEDB (intégré Windows).
+// SQLOLEDB est présent sur tout Windows : aucune installation nécessaire.
+const ADO_PROVIDER = 'auto'; // 'auto', 'MSOLEDBSQL', 'SQLNCLI11' ou 'SQLOLEDB'
 // -----------------------------------------------------------------------------
 
 // ---- Mode CSV ---------------------------------------------------------------
@@ -76,5 +87,52 @@ function get_pdo(): PDO
     throw new RuntimeException(
         "Impossible de se connecter à SQL Server (" . DB_HOST . ").\n"
         . implode("\n", $errors)
+    );
+}
+
+/**
+ * Ouvre une connexion SQL Server via OLE DB / COM (ADODB), sans pilote ODBC.
+ * Fonctionne uniquement sous Windows (extension com_dotnet).
+ *
+ * @return array{0:variant, 1:string} La connexion COM ouverte et le fournisseur utilisé.
+ * @throws RuntimeException
+ */
+function open_ado_connection(): array
+{
+    if (!class_exists('COM')) {
+        throw new RuntimeException(
+            "L'extension PHP « com_dotnet » n'est pas disponible.\n"
+            . "Elle est nécessaire pour le mode 'ado' (connexion sans ODBC) et n'existe que sous Windows.\n"
+            . "Activez-la dans php.ini :  extension=com_dotnet\n"
+            . "puis redémarrez Apache."
+        );
+    }
+
+    $providers = ADO_PROVIDER === 'auto'
+        ? ['MSOLEDBSQL', 'SQLNCLI11', 'SQLOLEDB']
+        : [ADO_PROVIDER];
+
+    $errors = [];
+    foreach ($providers as $prov) {
+        try {
+            $conn = new COM('ADODB.Connection');
+            $cs   = sprintf(
+                'Provider=%s;Data Source=%s,%d;Initial Catalog=%s;User ID=%s;Password=%s;',
+                $prov, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
+            );
+            // MSOLEDBSQL impose parfois le chiffrement : on fait confiance au certificat.
+            if (stripos($prov, 'MSOLEDBSQL') !== false) {
+                $cs .= 'TrustServerCertificate=yes;';
+            }
+            $conn->Open($cs);
+            return [$conn, $prov];
+        } catch (Throwable $e) {
+            $errors[] = $prov . ' : ' . $e->getMessage();
+        }
+    }
+
+    throw new RuntimeException(
+        "Connexion OLE DB à SQL Server impossible (" . DB_HOST . ").\n"
+        . "Fournisseurs testés :\n" . implode("\n", $errors)
     );
 }
