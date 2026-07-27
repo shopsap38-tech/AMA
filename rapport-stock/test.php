@@ -98,8 +98,27 @@ if (DATA_SOURCE === 'ado') {
     $aCom = class_exists('COM');
     etape('1. Extension PHP com_dotnet disponible', $aCom,
         $aCom ? 'OK (connexion OLE DB possible sans pilote ODBC).'
-              : "Absente. Activez « extension=com_dotnet » dans php.ini puis redémarrez Apache.\n"
-                . "(Disponible uniquement sous Windows.)");
+              : "Absente. Voir le détail ci-dessous pour savoir quel php.ini modifier.");
+
+    if (!$aCom) {
+        // Indique précisément où activer l'extension.
+        $ini = php_ini_loaded_file() ?: '(inconnu)';
+        $dir = (string) ini_get('extension_dir');
+        $dll = $dir !== '' ? rtrim($dir, '\\/') . DIRECTORY_SEPARATOR . 'php_com_dotnet.dll' : '';
+        $dllExiste = $dll !== '' && @file_exists($dll);
+        $estWindows = stripos(PHP_OS, 'WIN') === 0;
+
+        etape('   → Où activer com_dotnet', false,
+            "Système : " . PHP_OS . ($estWindows ? '' : "  (⚠ non-Windows : COM/OLE DB indisponible)") . "\n"
+            . "php.ini chargé par CE PHP (celui d'Apache) :\n   " . $ini . "\n"
+            . "extension_dir :\n   " . ($dir !== '' ? $dir : '(non défini)') . "\n"
+            . "DLL php_com_dotnet.dll présente : " . ($dllExiste ? 'OUI' : 'NON')
+              . ($dll !== '' ? "\n   (" . $dll . ")" : '') . "\n\n"
+            . "Action : ouvrez le fichier php.ini ci-dessus, décommentez la ligne\n"
+            . "   extension=com_dotnet\n"
+            . "enregistrez, puis redémarrez complètement Apache dans Laragon.\n\n"
+            . "Alternative sans extension PHP : mode CSV + script outils/export-stock.ps1.");
+    }
 
     if ($aCom) {
         // 2) Ouverture de la connexion OLE DB

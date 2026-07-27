@@ -78,6 +78,21 @@ Magasin;Item Code;Item Name;Disponible;UoM;CodeBars;InActif;Poids;Price;Value;U_
 
 > Pour actualiser le rapport, ré-exportez la vue et remplacez `data/stock.csv`.
 
+### Export automatique sans ODBC ni extension PHP (PowerShell)
+
+Le script `outils/export-stock.ps1` lit la vue `V_BH_STGlob` directement via
+**.NET SqlClient** (intégré à Windows — aucun pilote ODBC, aucune extension PHP)
+et écrit `data/stock.csv`. Exécution :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File outils\export-stock.ps1
+```
+
+Adaptez si besoin `-Database`, `-Server`, `-User`, `-Password` en tête du script.
+Vous pouvez le **planifier** (Planificateur de tâches Windows) pour rafraîchir le
+CSV automatiquement, par ex. chaque nuit — le rapport reste ainsi à jour sans
+connexion directe depuis PHP.
+
 ---
 
 ## Mode SQL Server (connexion en direct)
@@ -127,6 +142,7 @@ rapport-stock/
 ├── includes/report.php     Chargement + filtres + tri + totaux
 ├── index.php               Rapport (filtres, tri, synthèse)
 ├── export.php              Export CSV
+├── outils/export-stock.ps1 Export SQL Server -> CSV via .NET (sans ODBC)
 ├── test.php                Page de diagnostic
 └── README.md
 ```
