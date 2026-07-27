@@ -27,26 +27,14 @@ $out = fopen('php://output', 'w');
 // BOM UTF-8 pour qu'Excel affiche correctement les accents.
 fwrite($out, "\xEF\xBB\xBF");
 
-$entetes = [
-    'Magasin', 'Item Code', 'Item Name', 'Disponible', 'UoM',
-    'CodeBars', 'InActif', 'Poids', 'Price', 'Value', 'U_u_forcast',
-];
-fputcsv($out, $entetes, ';');
+fputcsv($out, COLONNES, ';');
 
 foreach ($lignes as $l) {
-    fputcsv($out, [
-        $l['Magasin'],
-        $l['Item Code'],
-        $l['Item Name'],
-        $l['Disponible'],
-        $l['UoM'],
-        $l['CodeBars'],
-        $l['InActif'],
-        $l['Poids'],
-        $l['Price'],
-        $l['Value'],
-        $l['U_u_forcast'],
-    ], ';');
+    $ligne = [];
+    foreach (COLONNES as $col) {
+        $ligne[] = $l[$col] ?? '';
+    }
+    fputcsv($out, $ligne, ';');
 }
 
 fclose($out);

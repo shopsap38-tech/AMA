@@ -141,11 +141,11 @@ try {
         'Authentification et ouverture de la base « ' . DB_NAME . ' » réussies.');
 
     try {
-        $n = $pdo->query('SELECT COUNT(*) FROM [dbo].[V_BH_STockTracking]')->fetchColumn();
-        etape('4. Lecture de la vue [dbo].[V_BH_STockTracking]', true,
+        $n = $pdo->query('SELECT COUNT(*) FROM [dbo].[V_BH_STGlob]')->fetchColumn();
+        etape('4. Lecture de la vue [dbo].[V_BH_STGlob]', true,
             $n . ' ligne(s) trouvée(s). Tout est bon — vous pouvez ouvrir index.php.');
     } catch (Throwable $e) {
-        etape('4. Lecture de la vue [dbo].[V_BH_STockTracking]', false,
+        etape('4. Lecture de la vue [dbo].[V_BH_STGlob]', false,
             "La connexion marche mais la vue est introuvable ou inaccessible.\n"
             . 'Vérifiez son nom / les droits de l\'utilisateur.' . "\n\n" . $e->getMessage());
     }

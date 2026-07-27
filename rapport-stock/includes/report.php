@@ -11,10 +11,11 @@
 const COLONNES = [
     'Magasin', 'Item Code', 'Item Name', 'Disponible', 'UoM',
     'CodeBars', 'InActif', 'Poids', 'Price', 'Value', 'U_u_forcast',
+    'U_Qte_Palette', 'U_u_cat', 'U_u_brand',
 ];
 
 /** Colonnes numériques (tri numérique + totaux). */
-const COLONNES_NUM = ['Disponible', 'Poids', 'Price', 'Value', 'U_u_forcast'];
+const COLONNES_NUM = ['Disponible', 'Poids', 'Price', 'Value', 'U_u_forcast', 'U_Qte_Palette'];
 
 /**
  * Lit et normalise les filtres depuis $_GET.
@@ -23,7 +24,8 @@ const COLONNES_NUM = ['Disponible', 'Poids', 'Price', 'Value', 'U_u_forcast'];
  */
 function lire_filtres(): array
 {
-    $triAutorise = ['Magasin', 'Item Code', 'Item Name', 'Disponible', 'Poids', 'Price', 'Value', 'U_u_forcast'];
+    $triAutorise = ['Magasin', 'Item Code', 'Item Name', 'Disponible', 'Poids',
+                    'Price', 'Value', 'U_u_forcast', 'U_Qte_Palette', 'U_u_cat', 'U_u_brand'];
 
     $tri = $_GET['tri'] ?? 'Item Name';
     if (!in_array($tri, $triAutorise, true)) {
@@ -37,6 +39,8 @@ function lire_filtres(): array
 
     return [
         'magasin'          => trim((string) ($_GET['magasin'] ?? '')),
+        'categorie'        => trim((string) ($_GET['categorie'] ?? '')),
+        'marque'           => trim((string) ($_GET['marque'] ?? '')),
         'recherche'        => trim((string) ($_GET['recherche'] ?? '')),
         'masquer_inactifs' => isset($_GET['masquer_inactifs']),
         'tri'              => $tri,
@@ -67,8 +71,9 @@ function charger_depuis_sqlserver(): array
 {
     $pdo = get_pdo();
     $sql = 'SELECT [Magasin], [Item Code], [Item Name], [Disponible], [UoM],
-                   [CodeBars], [InActif], [Poids], [Price], [Value], [U_u_forcast]
-            FROM [dbo].[V_BH_STockTracking]';
+                   [CodeBars], [InActif], [Poids], [Price], [Value], [U_u_forcast],
+                   [U_Qte_Palette], [U_u_cat], [U_u_brand]
+            FROM [dbo].[V_BH_STGlob]';
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -199,23 +204,34 @@ function parse_nombre($valeur): float
 }
 
 /**
- * Liste distincte des magasins présents dans les données chargées.
+ * Liste distincte, triée, des valeurs d'une colonne dans les données chargées.
+ *
+ * @param array<int, array<string, mixed>> $lignes
+ * @return string[]
+ */
+function liste_valeurs(array $lignes, string $colonne): array
+{
+    $vues = [];
+    foreach ($lignes as $l) {
+        $v = trim((string) ($l[$colonne] ?? ''));
+        if ($v !== '') {
+            $vues[$v] = true;
+        }
+    }
+    $liste = array_keys($vues);
+    natcasesort($liste);
+    return array_values($liste);
+}
+
+/**
+ * Liste distincte des magasins (raccourci rétro-compatible).
  *
  * @param array<int, array<string, mixed>> $lignes
  * @return string[]
  */
 function liste_magasins(array $lignes): array
 {
-    $magasins = [];
-    foreach ($lignes as $l) {
-        $m = trim((string) ($l['Magasin'] ?? ''));
-        if ($m !== '') {
-            $magasins[$m] = true;
-        }
-    }
-    $liste = array_keys($magasins);
-    sort($liste);
-    return $liste;
+    return liste_valeurs($lignes, 'Magasin');
 }
 
 /**
@@ -231,6 +247,12 @@ function filtrer_et_trier(array $lignes, array $filtres): array
 
     $lignes = array_values(array_filter($lignes, static function ($l) use ($filtres, $recherche) {
         if ($filtres['magasin'] !== '' && (string) ($l['Magasin'] ?? '') !== $filtres['magasin']) {
+            return false;
+        }
+        if ($filtres['categorie'] !== '' && (string) ($l['U_u_cat'] ?? '') !== $filtres['categorie']) {
+            return false;
+        }
+        if ($filtres['marque'] !== '' && (string) ($l['U_u_brand'] ?? '') !== $filtres['marque']) {
             return false;
         }
         if ($recherche !== '') {

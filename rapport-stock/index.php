@@ -5,13 +5,17 @@ require_once __DIR__ . '/includes/report.php';
 $pageTitle = 'Rapport de suivi de stock';
 $filtres   = lire_filtres();
 
-$erreur   = null;
-$lignes   = [];
-$magasins = [];
+$erreur     = null;
+$lignes     = [];
+$magasins   = [];
+$categories = [];
+$marques    = [];
 try {
-    $toutes   = charger_toutes_lignes();
-    $magasins = liste_magasins($toutes);
-    $lignes   = filtrer_et_trier($toutes, $filtres);
+    $toutes     = charger_toutes_lignes();
+    $magasins   = liste_valeurs($toutes, 'Magasin');
+    $categories = liste_valeurs($toutes, 'U_u_cat');
+    $marques    = liste_valeurs($toutes, 'U_u_brand');
+    $lignes     = filtrer_et_trier($toutes, $filtres);
 } catch (Throwable $e) {
     $erreur = $e->getMessage();
 }
@@ -79,6 +83,30 @@ require_once __DIR__ . '/includes/header.php';
             </select>
         </div>
         <div class="field">
+            <label for="categorie">Catégorie</label>
+            <select name="categorie" id="categorie">
+                <option value="">Toutes</option>
+                <?php foreach ($categories as $c): ?>
+                    <option value="<?= htmlspecialchars($c) ?>"
+                        <?= $filtres['categorie'] === $c ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($c) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="field">
+            <label for="marque">Marque</label>
+            <select name="marque" id="marque">
+                <option value="">Toutes</option>
+                <?php foreach ($marques as $mq): ?>
+                    <option value="<?= htmlspecialchars($mq) ?>"
+                        <?= $filtres['marque'] === $mq ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($mq) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="field">
             <label for="recherche">Recherche (code, nom, code-barres)</label>
             <input type="text" name="recherche" id="recherche"
                    value="<?= htmlspecialchars($filtres['recherche']) ?>"
@@ -125,12 +153,15 @@ require_once __DIR__ . '/includes/header.php';
                 <th class="num"><a href="<?= lien_tri($filtres, 'Price') ?>">Prix<?= fleche_tri($filtres, 'Price') ?></a></th>
                 <th class="num"><a href="<?= lien_tri($filtres, 'Value') ?>">Valeur<?= fleche_tri($filtres, 'Value') ?></a></th>
                 <th class="num"><a href="<?= lien_tri($filtres, 'U_u_forcast') ?>">Prévision<?= fleche_tri($filtres, 'U_u_forcast') ?></a></th>
+                <th class="num"><a href="<?= lien_tri($filtres, 'U_Qte_Palette') ?>">Qté/Palette<?= fleche_tri($filtres, 'U_Qte_Palette') ?></a></th>
+                <th><a href="<?= lien_tri($filtres, 'U_u_cat') ?>">Catégorie<?= fleche_tri($filtres, 'U_u_cat') ?></a></th>
+                <th><a href="<?= lien_tri($filtres, 'U_u_brand') ?>">Marque<?= fleche_tri($filtres, 'U_u_brand') ?></a></th>
                 <th>Statut</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($lignes)): ?>
-                <tr><td colspan="11">Aucune ligne ne correspond aux critères.</td></tr>
+                <tr><td colspan="14">Aucune ligne ne correspond aux critères.</td></tr>
             <?php endif; ?>
             <?php foreach ($lignes as $l): ?>
                 <?php $inactif = isset($l['InActif']) && strtoupper((string) $l['InActif']) === 'Y'; ?>
@@ -145,6 +176,9 @@ require_once __DIR__ . '/includes/header.php';
                     <td class="num"><?= fmt_nombre($l['Price'], 2) ?></td>
                     <td class="num"><?= fmt_nombre($l['Value'], 2) ?></td>
                     <td class="num"><?= fmt_nombre($l['U_u_forcast'], 2) ?></td>
+                    <td class="num"><?= fmt_nombre($l['U_Qte_Palette'], 2) ?></td>
+                    <td><?= htmlspecialchars((string) ($l['U_u_cat'] ?? '')) ?></td>
+                    <td><?= htmlspecialchars((string) ($l['U_u_brand'] ?? '')) ?></td>
                     <td>
                         <?php if ($inactif): ?>
                             <span class="badge badge-danger">Inactif</span>
@@ -162,7 +196,7 @@ require_once __DIR__ . '/includes/header.php';
                 <td class="num"><strong><?= fmt_nombre($totaux['disponible'], 2) ?></strong></td>
                 <td colspan="4"></td>
                 <td class="num"><strong><?= fmt_nombre($totaux['value'], 2) ?></strong></td>
-                <td colspan="2"></td>
+                <td colspan="5"></td>
             </tr>
         </tfoot>
         <?php endif; ?>

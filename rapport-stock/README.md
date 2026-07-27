@@ -1,16 +1,16 @@
 # Rapport de suivi de stock
 
 Application PHP qui affiche un **rapport de suivi de stock** à partir de la vue
-SQL Server `[dbo].[V_BH_STockTracking]` (base SAP Business One) hébergée sur
+SQL Server `[dbo].[V_BH_STGlob]` (base SAP Business One) hébergée sur
 `192.168.1.240`.
 
 ## Fonctionnalités
 
-- Rapport de toutes les lignes de la vue `V_BH_STockTracking` :
+- Rapport de toutes les lignes de la vue `V_BH_STGlob` :
   Magasin, Item Code, Item Name, Disponible, UoM, CodeBars, InActif, Poids,
-  Price, Value, U_u_forcast.
-- Filtres : par **magasin**, **recherche** (code article, nom, code-barres),
-  et option pour **masquer les articles inactifs**.
+  Price, Value, U_u_forcast, U_Qte_Palette, U_u_cat, U_u_brand.
+- Filtres : par **magasin**, **catégorie**, **marque**, **recherche** (code
+  article, nom, code-barres), et option pour **masquer les articles inactifs**.
 - **Tri** cliquable sur les colonnes principales.
 - **Cartes de synthèse** : nombre d'articles, total disponible, valeur totale.
 - **Export CSV** (compatible Excel : séparateur `;` + BOM UTF-8).
@@ -48,7 +48,7 @@ nom d'en-tête** (l'ordre importe peu). Les nombres au format français
 En-têtes attendus (première ligne du CSV) :
 
 ```
-Magasin;Item Code;Item Name;Disponible;UoM;CodeBars;InActif;Poids;Price;Value;U_u_forcast
+Magasin;Item Code;Item Name;Disponible;UoM;CodeBars;InActif;Poids;Price;Value;U_u_forcast;U_Qte_Palette;U_u_cat;U_u_brand
 ```
 
 > Pour actualiser le rapport, ré-exportez la vue et remplacez `data/stock.csv`.
@@ -74,7 +74,7 @@ const DB_PASS = '1AQWXCV';
 ```
 
 > **Important** : `DB_NAME` doit correspondre au nom exact de votre base SAP
-> Business One (celle qui contient la vue `V_BH_STockTracking`).
+> Business One (celle qui contient la vue `V_BH_STGlob`).
 
 ## Diagnostic
 
