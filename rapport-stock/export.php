@@ -9,8 +9,7 @@ require_once __DIR__ . '/includes/report.php';
 $filtres = lire_filtres();
 
 try {
-    $pdo    = get_pdo();
-    $lignes = executer_rapport($pdo, $filtres);
+    $lignes = filtrer_et_trier(charger_toutes_lignes(), $filtres);
 } catch (Throwable $e) {
     http_response_code(500);
     header('Content-Type: text/plain; charset=UTF-8');

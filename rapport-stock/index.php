@@ -9,9 +9,9 @@ $erreur   = null;
 $lignes   = [];
 $magasins = [];
 try {
-    $pdo      = get_pdo();
-    $magasins = liste_magasins($pdo);
-    $lignes   = executer_rapport($pdo, $filtres);
+    $toutes   = charger_toutes_lignes();
+    $magasins = liste_magasins($toutes);
+    $lignes   = filtrer_et_trier($toutes, $filtres);
 } catch (Throwable $e) {
     $erreur = $e->getMessage();
 }
@@ -52,10 +52,17 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <?php if ($erreur): ?>
-    <p class="alert alert-error"><strong>Erreur de connexion / requête :</strong><br>
+    <p class="alert alert-error"><strong>Impossible de charger les données :</strong><br>
         <?= nl2br(htmlspecialchars($erreur)) ?></p>
-    <p class="hint">Vérifiez les paramètres dans <code>config/database.php</code>
-        (nom de la base <code>DB_NAME</code>, pilote PDO SQL Server activé, accès réseau à <?= htmlspecialchars(DB_HOST) ?>).</p>
+    <?php if (DATA_SOURCE === 'csv'): ?>
+        <p class="hint">Mode <strong>CSV</strong> : vérifiez que le fichier
+            <code><?= htmlspecialchars(CSV_FILE) ?></code> existe et contient l'export de la vue.
+            Voir le README, section « Mode CSV ».</p>
+    <?php else: ?>
+        <p class="hint">Mode <strong>SQL Server</strong> : vérifiez les paramètres dans
+            <code>config/database.php</code> (nom de la base <code>DB_NAME</code>, pilote ODBC/PDO
+            installé, accès réseau à <?= htmlspecialchars(DB_HOST) ?>).</p>
+    <?php endif; ?>
 <?php else: ?>
 
     <form class="filters no-print" method="get" action="index.php">

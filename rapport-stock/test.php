@@ -38,11 +38,60 @@ function etape(string $titre, bool $ok, string $detail = ''): void
     </style>
 </head>
 <body>
-<h1>Diagnostic de connexion à SQL Server</h1>
-<p style="color:#616e7c">Serveur <code><?= htmlspecialchars(DB_HOST) ?>:<?= DB_PORT ?></code>
-   — base <code><?= htmlspecialchars(DB_NAME) ?></code></p>
+<h1>Diagnostic du rapport de suivi de stock</h1>
+<p style="color:#616e7c">Source configurée : <code><?= htmlspecialchars(DATA_SOURCE) ?></code></p>
 
 <?php
+require_once __DIR__ . '/includes/report.php';
+
+// ============================================================================
+// MODE CSV
+// ============================================================================
+if (DATA_SOURCE === 'csv') {
+    etape('Mode CSV — aucun pilote SQL Server requis', true,
+        'Fichier attendu : ' . CSV_FILE);
+
+    $existe = is_file(CSV_FILE);
+    etape('1. Fichier CSV présent', $existe,
+        $existe ? CSV_FILE : "Introuvable :\n" . CSV_FILE
+            . "\nExportez la vue en CSV et placez le fichier ici (voir README).");
+
+    if ($existe) {
+        etape('2. Fichier CSV lisible', is_readable(CSV_FILE),
+            is_readable(CSV_FILE) ? 'OK' : 'Droits de lecture insuffisants.');
+
+        try {
+            $lignes = charger_toutes_lignes();
+            etape('3. Lecture et analyse du CSV', true,
+                count($lignes) . ' ligne(s) de données lue(s).');
+
+            if ($lignes) {
+                $premier = $lignes[0];
+                $apercu  = [];
+                foreach (['Item Code', 'Item Name', 'Magasin', 'Disponible', 'Value'] as $c) {
+                    $apercu[] = $c . ' = ' . (string) ($premier[$c] ?? '—');
+                }
+                etape('4. Colonnes reconnues (1re ligne)', true, implode("\n", $apercu)
+                    . "\n\nTout est bon — vous pouvez ouvrir index.php.");
+            } else {
+                etape('4. Données', false, 'Le fichier ne contient aucune ligne de données.');
+            }
+        } catch (Throwable $e) {
+            etape('3. Lecture et analyse du CSV', false, $e->getMessage());
+        }
+    }
+    echo '<p style="color:#97a3af;font-size:.85rem;margin-top:2rem">'
+        . 'Pensez à supprimer <code>test.php</code> une fois le diagnostic terminé.</p>';
+    echo '</body></html>';
+    exit;
+}
+
+// ============================================================================
+// MODE SQL SERVER
+// ============================================================================
+echo '<p style="color:#616e7c">Serveur <code>' . htmlspecialchars(DB_HOST) . ':' . DB_PORT
+    . '</code> — base <code>' . htmlspecialchars(DB_NAME) . '</code></p>';
+
 // 1) Extension PHP pdo_sqlsrv / pdo_dblib
 $drivers = PDO::getAvailableDrivers();
 $aSqlsrv = in_array('sqlsrv', $drivers, true);

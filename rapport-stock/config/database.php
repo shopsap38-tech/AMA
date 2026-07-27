@@ -1,29 +1,38 @@
 <?php
 /**
- * Connexion à SQL Server (SAP Business One) pour le rapport de suivi de stock.
+ * Configuration de la source de données du rapport de suivi de stock.
  *
- * La vue lue est [dbo].[V_BH_STockTracking] sur le serveur 192.168.1.240.
+ * Deux modes possibles (constante DATA_SOURCE) :
  *
- * Deux pilotes PDO sont possibles :
- *   - sqlsrv  : pilote officiel Microsoft (Windows / Laragon avec pdo_sqlsrv activé)
- *   - dblib   : FreeTDS (Linux / macOS)
- * Le code essaie sqlsrv en premier, puis dblib en secours.
+ *   'csv'       -> l'application lit un fichier CSV exporté depuis SQL Server
+ *                  (aucune connexion ni pilote nécessaire). RECOMMANDÉ si le
+ *                  pilote ODBC Microsoft n'est pas installé.
  *
- * Adaptez les valeurs ci-dessous à votre environnement (surtout DB_NAME).
+ *   'sqlserver' -> connexion directe à SQL Server via PDO (nécessite le pilote
+ *                  ODBC Microsoft + l'extension pdo_sqlsrv).
  */
 
-// ---- Paramètres de connexion ------------------------------------------------
-const DB_HOST = '192.168.1.240'; // Serveur SQL Server
-const DB_PORT = 1433;            // Port SQL Server par défaut
-const DB_NAME = 'SBO_AMA';       // <-- Nom de la base SAP Business One à ADAPTER
-const DB_USER = 'sa';            // Utilisateur SQL Server
-const DB_PASS = '1AQWXCV';       // Mot de passe SQL Server
+// ---- Choix de la source -----------------------------------------------------
+const DATA_SOURCE = 'csv'; // 'csv' ou 'sqlserver'
+// -----------------------------------------------------------------------------
+
+// ---- Mode CSV ---------------------------------------------------------------
+// Fichier à lire. Exportez la vue [dbo].[V_BH_STockTracking] en CSV et placez
+// le fichier ici (voir README, section « Mode CSV »).
+const CSV_FILE      = __DIR__ . '/../data/stock.csv';
+const CSV_DELIMITER = 'auto'; // 'auto', ';', ',' ou "\t"
+// -----------------------------------------------------------------------------
+
+// ---- Mode SQL Server (utilisé seulement si DATA_SOURCE = 'sqlserver') --------
+const DB_HOST = '192.168.1.240';
+const DB_PORT = 1433;
+const DB_NAME = 'SBO_AMA';   // <-- nom réel de la base SAP Business One
+const DB_USER = 'sa';
+const DB_PASS = '1AQWXCV';
 // -----------------------------------------------------------------------------
 
 /**
- * Ouvre une connexion PDO vers SQL Server.
- *
- * @return PDO
+ * Ouvre une connexion PDO vers SQL Server (mode 'sqlserver').
  */
 function get_pdo(): PDO
 {
@@ -35,14 +44,11 @@ function get_pdo(): PDO
     $drivers = PDO::getAvailableDrivers();
     $errors  = [];
 
-    // 1) Pilote Microsoft sqlsrv (recommandé sous Windows / Laragon)
     if (in_array('sqlsrv', $drivers, true)) {
         try {
             $dsn = sprintf(
                 'sqlsrv:Server=%s,%d;Database=%s;TrustServerCertificate=1',
-                DB_HOST,
-                DB_PORT,
-                DB_NAME
+                DB_HOST, DB_PORT, DB_NAME
             );
             return new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
@@ -50,14 +56,11 @@ function get_pdo(): PDO
         }
     }
 
-    // 2) Pilote FreeTDS dblib (Linux / macOS)
     if (in_array('dblib', $drivers, true)) {
         try {
             $dsn = sprintf(
                 'dblib:host=%s:%d;dbname=%s;charset=UTF-8',
-                DB_HOST,
-                DB_PORT,
-                DB_NAME
+                DB_HOST, DB_PORT, DB_NAME
             );
             return new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {

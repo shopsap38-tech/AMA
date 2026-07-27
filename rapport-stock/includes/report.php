@@ -1,10 +1,20 @@
 <?php
 /**
- * Construction et exécution de la requête du rapport de suivi de stock.
+ * Chargement, filtrage, tri et totaux du rapport de suivi de stock.
  *
- * Centralise la lecture des filtres (GET) et la requête SQL afin que la page
- * du rapport (index.php) et l'export CSV (export.php) restent cohérents.
+ * Fonctionne indépendamment de la source (CSV ou SQL Server) : les données
+ * sont chargées sous forme de tableau de lignes, puis filtrées/triées en PHP.
+ * Cela garantit un comportement identique dans les deux modes.
  */
+
+/** Colonnes attendues, dans l'ordre du rapport. */
+const COLONNES = [
+    'Magasin', 'Item Code', 'Item Name', 'Disponible', 'UoM',
+    'CodeBars', 'InActif', 'Poids', 'Price', 'Value', 'U_u_forcast',
+];
+
+/** Colonnes numériques (tri numérique + totaux). */
+const COLONNES_NUM = ['Disponible', 'Poids', 'Price', 'Value', 'U_u_forcast'];
 
 /**
  * Lit et normalise les filtres depuis $_GET.
@@ -13,13 +23,10 @@
  */
 function lire_filtres(): array
 {
-    $colonnesTri = [
-        'Magasin', 'Item Code', 'Item Name', 'Disponible',
-        'Poids', 'Price', 'Value', 'U_u_forcast',
-    ];
+    $triAutorise = ['Magasin', 'Item Code', 'Item Name', 'Disponible', 'Poids', 'Price', 'Value', 'U_u_forcast'];
 
     $tri = $_GET['tri'] ?? 'Item Name';
-    if (!in_array($tri, $colonnesTri, true)) {
+    if (!in_array($tri, $triAutorise, true)) {
         $tri = 'Item Name';
     }
 
@@ -38,58 +45,224 @@ function lire_filtres(): array
 }
 
 /**
- * Récupère la liste distincte des magasins pour le filtre déroulant.
+ * Charge TOUTES les lignes depuis la source configurée (CSV ou SQL Server).
  *
- * @return string[]
+ * @return array<int, array<string, mixed>>
+ * @throws RuntimeException
  */
-function liste_magasins(PDO $pdo): array
+function charger_toutes_lignes(): array
 {
-    $sql = 'SELECT DISTINCT [Magasin] FROM [dbo].[V_BH_STockTracking]
-            WHERE [Magasin] IS NOT NULL ORDER BY [Magasin]';
-    return $pdo->query($sql)->fetchAll(PDO::FETCH_COLUMN);
+    if (DATA_SOURCE === 'sqlserver') {
+        return charger_depuis_sqlserver();
+    }
+    return charger_depuis_csv();
 }
 
 /**
- * Exécute la requête du rapport en fonction des filtres et retourne les lignes.
+ * Lecture directe de la vue SQL Server.
  *
- * @param array $filtres Résultat de lire_filtres()
  * @return array<int, array<string, mixed>>
  */
-function executer_rapport(PDO $pdo, array $filtres): array
+function charger_depuis_sqlserver(): array
 {
-    $where  = [];
-    $params = [];
-
-    if ($filtres['magasin'] !== '') {
-        $where[]            = '[Magasin] = :magasin';
-        $params[':magasin'] = $filtres['magasin'];
-    }
-
-    if ($filtres['recherche'] !== '') {
-        $where[]              = '([Item Code] LIKE :recherche OR [Item Name] LIKE :recherche OR [CodeBars] LIKE :recherche)';
-        $params[':recherche'] = '%' . $filtres['recherche'] . '%';
-    }
-
-    if ($filtres['masquer_inactifs']) {
-        // Dans SAP B1, InActif vaut 'Y' lorsque l'article est inactif.
-        $where[] = "([InActif] IS NULL OR [InActif] <> 'Y')";
-    }
-
+    $pdo = get_pdo();
     $sql = 'SELECT [Magasin], [Item Code], [Item Name], [Disponible], [UoM],
                    [CodeBars], [InActif], [Poids], [Price], [Value], [U_u_forcast]
             FROM [dbo].[V_BH_STockTracking]';
+    return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+}
 
-    if ($where) {
-        $sql .= ' WHERE ' . implode(' AND ', $where);
+/**
+ * Lecture d'un fichier CSV exporté de la vue.
+ * Tolère le BOM UTF-8, détecte le séparateur et mappe par nom d'en-tête.
+ *
+ * @return array<int, array<string, mixed>>
+ * @throws RuntimeException
+ */
+function charger_depuis_csv(): array
+{
+    $fichier = CSV_FILE;
+
+    if (!is_file($fichier)) {
+        throw new RuntimeException(
+            "Fichier CSV introuvable :\n" . $fichier . "\n\n"
+            . "Exportez la vue [dbo].[V_BH_STockTracking] en CSV et placez le "
+            . "fichier à cet emplacement (voir README, section « Mode CSV »)."
+        );
+    }
+    if (!is_readable($fichier)) {
+        throw new RuntimeException("Fichier CSV présent mais non lisible :\n" . $fichier);
     }
 
-    // $filtres['tri'] et 'sens' sont validés en liste blanche dans lire_filtres().
-    $sql .= sprintf(' ORDER BY [%s] %s', $filtres['tri'], $filtres['sens']);
+    $contenu = file_get_contents($fichier);
+    if ($contenu === false || $contenu === '') {
+        throw new RuntimeException("Fichier CSV vide ou illisible :\n" . $fichier);
+    }
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
+    // Retire le BOM UTF-8 éventuel.
+    $contenu = preg_replace('/^\xEF\xBB\xBF/', '', $contenu);
 
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $lignesTexte = preg_split('/\r\n|\r|\n/', $contenu);
+    // Supprime les lignes vides finales.
+    while (!empty($lignesTexte) && trim(end($lignesTexte)) === '') {
+        array_pop($lignesTexte);
+    }
+    if (empty($lignesTexte)) {
+        throw new RuntimeException("Fichier CSV sans données :\n" . $fichier);
+    }
+
+    $delim   = detecter_delimiteur($lignesTexte[0]);
+    $entetes = str_getcsv(array_shift($lignesTexte), $delim);
+    $entetes = array_map(static fn($h) => trim((string) $h), $entetes);
+
+    // Index colonne -> nom canonique (insensible à la casse / espaces).
+    $map = [];
+    foreach ($entetes as $i => $nom) {
+        foreach (COLONNES as $canon) {
+            if (mb_strtolower($nom) === mb_strtolower($canon)) {
+                $map[$canon] = $i;
+            }
+        }
+    }
+
+    if (!isset($map['Item Code']) && !isset($map['Item Name'])) {
+        throw new RuntimeException(
+            "En-têtes CSV non reconnus. Attendu (au moins) « Item Code » / « Item Name ».\n"
+            . "En-têtes trouvés : " . implode(', ', $entetes) . "\n"
+            . "Séparateur détecté : « " . ($delim === "\t" ? 'TAB' : $delim) . " »."
+        );
+    }
+
+    $lignes = [];
+    foreach ($lignesTexte as $texte) {
+        if (trim($texte) === '') {
+            continue;
+        }
+        $champs = str_getcsv($texte, $delim);
+        $ligne  = [];
+        foreach (COLONNES as $canon) {
+            $val = isset($map[$canon], $champs[$map[$canon]]) ? $champs[$map[$canon]] : null;
+            if ($val !== null && in_array($canon, COLONNES_NUM, true)) {
+                $val = parse_nombre($val);
+            }
+            $ligne[$canon] = $val;
+        }
+        $lignes[] = $ligne;
+    }
+
+    return $lignes;
+}
+
+/** Détecte le séparateur d'une ligne d'en-tête. */
+function detecter_delimiteur(string $entete): string
+{
+    if (CSV_DELIMITER !== 'auto') {
+        return CSV_DELIMITER;
+    }
+    $candidats = [';' => substr_count($entete, ';'),
+                  ',' => substr_count($entete, ','),
+                  "\t" => substr_count($entete, "\t")];
+    arsort($candidats);
+    $meilleur = array_key_first($candidats);
+    return $candidats[$meilleur] > 0 ? $meilleur : ';';
+}
+
+/**
+ * Convertit une chaîne (formats FR ou US) en nombre.
+ * Gère les espaces (milliers), la virgule ou le point décimal.
+ */
+function parse_nombre($valeur): float
+{
+    $s = trim((string) $valeur);
+    if ($s === '') {
+        return 0.0;
+    }
+    // Retire espaces normaux et insécables (séparateurs de milliers).
+    $s = str_replace(["\xC2\xA0", ' '], '', $s);
+
+    $aVirgule = strpos($s, ',') !== false;
+    $aPoint   = strpos($s, '.') !== false;
+
+    if ($aVirgule && $aPoint) {
+        // Le dernier séparateur rencontré est le séparateur décimal.
+        if (strrpos($s, ',') > strrpos($s, '.')) {
+            $s = str_replace('.', '', $s);   // point = milliers
+            $s = str_replace(',', '.', $s);  // virgule = décimal
+        } else {
+            $s = str_replace(',', '', $s);   // virgule = milliers
+        }
+    } elseif ($aVirgule) {
+        $s = str_replace(',', '.', $s);      // virgule = décimal
+    }
+
+    return is_numeric($s) ? (float) $s : 0.0;
+}
+
+/**
+ * Liste distincte des magasins présents dans les données chargées.
+ *
+ * @param array<int, array<string, mixed>> $lignes
+ * @return string[]
+ */
+function liste_magasins(array $lignes): array
+{
+    $magasins = [];
+    foreach ($lignes as $l) {
+        $m = trim((string) ($l['Magasin'] ?? ''));
+        if ($m !== '') {
+            $magasins[$m] = true;
+        }
+    }
+    $liste = array_keys($magasins);
+    sort($liste);
+    return $liste;
+}
+
+/**
+ * Applique les filtres puis le tri sur les lignes chargées.
+ *
+ * @param array<int, array<string, mixed>> $lignes
+ * @param array $filtres Résultat de lire_filtres()
+ * @return array<int, array<string, mixed>>
+ */
+function filtrer_et_trier(array $lignes, array $filtres): array
+{
+    $recherche = mb_strtolower($filtres['recherche']);
+
+    $lignes = array_values(array_filter($lignes, static function ($l) use ($filtres, $recherche) {
+        if ($filtres['magasin'] !== '' && (string) ($l['Magasin'] ?? '') !== $filtres['magasin']) {
+            return false;
+        }
+        if ($recherche !== '') {
+            $foin = mb_strtolower(
+                (string) ($l['Item Code'] ?? '') . ' '
+                . (string) ($l['Item Name'] ?? '') . ' '
+                . (string) ($l['CodeBars'] ?? '')
+            );
+            if (strpos($foin, $recherche) === false) {
+                return false;
+            }
+        }
+        if ($filtres['masquer_inactifs'] && strtoupper((string) ($l['InActif'] ?? '')) === 'Y') {
+            return false;
+        }
+        return true;
+    }));
+
+    $col     = $filtres['tri'];
+    $numeric = in_array($col, COLONNES_NUM, true);
+    $facteur = $filtres['sens'] === 'DESC' ? -1 : 1;
+
+    usort($lignes, static function ($a, $b) use ($col, $numeric, $facteur) {
+        if ($numeric) {
+            $cmp = ((float) ($a[$col] ?? 0)) <=> ((float) ($b[$col] ?? 0));
+        } else {
+            $cmp = strcasecmp((string) ($a[$col] ?? ''), (string) ($b[$col] ?? ''));
+        }
+        return $cmp * $facteur;
+    });
+
+    return $lignes;
 }
 
 /**
@@ -101,9 +274,9 @@ function executer_rapport(PDO $pdo, array $filtres): array
 function calculer_totaux(array $lignes): array
 {
     $totaux = ['nb' => count($lignes), 'disponible' => 0.0, 'value' => 0.0];
-    foreach ($lignes as $ligne) {
-        $totaux['disponible'] += (float) ($ligne['Disponible'] ?? 0);
-        $totaux['value']      += (float) ($ligne['Value'] ?? 0);
+    foreach ($lignes as $l) {
+        $totaux['disponible'] += (float) ($l['Disponible'] ?? 0);
+        $totaux['value']      += (float) ($l['Value'] ?? 0);
     }
     return $totaux;
 }
