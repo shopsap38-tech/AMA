@@ -20,6 +20,12 @@
 const DATA_SOURCE = 'ado'; // 'ado', 'csv' ou 'sqlserver'
 // -----------------------------------------------------------------------------
 
+// ---- Restriction magasin ----------------------------------------------------
+// Si non vide, le rapport ne montre QUE ce magasin (données, totaux, export).
+// Mettez '' pour afficher tous les magasins.
+const MAGASIN_FILTRE = 'MAG_FMCG';
+// -----------------------------------------------------------------------------
+
 // ---- Mode ADO / OLE DB (SQL Server sans ODBC) -------------------------------
 // Fournisseur OLE DB. 'auto' teste dans l'ordre :
 //   MSOLEDBSQL (récent) -> SQLNCLI11 (Native Client) -> SQLOLEDB (intégré Windows).

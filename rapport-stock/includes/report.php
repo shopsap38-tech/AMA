@@ -57,12 +57,21 @@ function lire_filtres(): array
 function charger_toutes_lignes(): array
 {
     if (DATA_SOURCE === 'ado') {
-        return charger_depuis_ado();
+        $lignes = charger_depuis_ado();
+    } elseif (DATA_SOURCE === 'sqlserver') {
+        $lignes = charger_depuis_sqlserver();
+    } else {
+        $lignes = charger_depuis_csv();
     }
-    if (DATA_SOURCE === 'sqlserver') {
-        return charger_depuis_sqlserver();
+
+    // Restriction éventuelle à un seul magasin (config MAGASIN_FILTRE).
+    if (defined('MAGASIN_FILTRE') && MAGASIN_FILTRE !== '') {
+        $lignes = array_values(array_filter($lignes, static function ($l) {
+            return (string) ($l['Magasin'] ?? '') === MAGASIN_FILTRE;
+        }));
     }
-    return charger_depuis_csv();
+
+    return $lignes;
 }
 
 /**
