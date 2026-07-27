@@ -11,6 +11,8 @@ SQL Server `[dbo].[V_BH_STGlob]` (base SAP Business One) hébergée sur
   Price, Value, U_u_forcast, U_Qte_Palette, U_u_cat, U_u_brand.
 - Filtres : par **magasin**, **catégorie**, **marque**, **recherche** (code
   article, nom, code-barres), et option pour **masquer les articles inactifs**.
+- **Tableau de bord Occupation** (`occupation.php`) : taux d'occupation du
+  magasin en palettes, en temps réel (jauge, indicateurs, grille d'emplacements).
 - **Tri** cliquable sur les colonnes principales.
 - **Cartes de synthèse** : nombre d'articles, total disponible, valeur totale.
 - **Export CSV** (compatible Excel : séparateur `;` + BOM UTF-8).
@@ -142,6 +144,25 @@ const DB_PASS = '1AQWXCV';
 > **Important** : `DB_NAME` doit correspondre au nom exact de votre base SAP
 > Business One (celle qui contient la vue `V_BH_STGlob`).
 
+## Tableau de bord Occupation
+
+La page `occupation.php` calcule l'occupation du magasin en **palettes** :
+
+- **Palettes occupées** par article = `plafond(Disponible ÷ Qté par palette)`
+  (une palette entamée occupe un emplacement complet), puis somme sur le magasin.
+- Comparaison à la **capacité totale** du magasin (`CAPACITE_PALETTES`) pour
+  obtenir : palettes occupées, palettes libres, **taux d'occupation (%)** et
+  **taux d'espace disponible (%)**.
+- Visualisation : jauge circulaire, cartes d'indicateurs, barre d'occupation,
+  grille des emplacements (coloré = occupé), et détail par article.
+- **Temps réel** : la page se rafraîchit automatiquement (60 s par défaut) et lit
+  la source configurée (OLE DB, ODBC, ou CSV).
+
+> **À configurer** : dans `config/database.php`, mettez `CAPACITE_PALETTES` à la
+> capacité réelle (nombre d'emplacements palette) du magasin `MAGASIN_FILTRE`.
+> Les articles sans « Qté/Palette » renseignée ne sont pas comptabilisés (et
+> sont signalés). La grille visuelle s'affiche quand la capacité ≤ 300.
+
 ## Diagnostic
 
 Ouvrez `http://localhost/rapport-stock/test.php` : la page vérifie, selon le
@@ -192,6 +213,7 @@ rapport-stock/
 ├── includes/footer.php     Pied de page commun
 ├── includes/report.php     Chargement + filtres + tri + totaux
 ├── index.php               Rapport (filtres, tri, synthèse)
+├── occupation.php          Tableau de bord d'occupation (palettes)
 ├── export.php              Export CSV
 ├── outils/export-stock.ps1 Export SQL Server -> CSV via .NET (sans ODBC)
 ├── test.php                Page de diagnostic

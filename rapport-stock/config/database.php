@@ -28,6 +28,12 @@ const DATA_SOURCE = 'ado'; // 'ado', 'pdo_odbc', 'csv' ou 'sqlserver'
 const MAGASIN_FILTRE = 'MAG_FMCG';
 // -----------------------------------------------------------------------------
 
+// ---- Capacité du magasin (page Occupation) ----------------------------------
+// Nombre TOTAL d'emplacements palette du magasin ci-dessus. Sert à calculer le
+// taux d'occupation. REMPLACEZ par la capacité réelle de votre magasin FMCG.
+const CAPACITE_PALETTES = 20;
+// -----------------------------------------------------------------------------
+
 // ---- Mode ADO / OLE DB (SQL Server sans ODBC) -------------------------------
 // Fournisseur OLE DB. 'auto' teste dans l'ordre :
 //   MSOLEDBSQL (récent) -> SQLNCLI11 (Native Client) -> SQLOLEDB (intégré Windows).

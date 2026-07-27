@@ -11,6 +11,7 @@
     <header class="topbar no-print">
         <h1><a href="/rapport-stock/index.php">Suivi de stock</a></h1>
         <nav>
+            <a href="/rapport-stock/occupation.php">Occupation</a>
             <a href="/rapport-stock/index.php">Rapport</a>
             <a href="#" onclick="window.print(); return false;">Imprimer</a>
         </nav>

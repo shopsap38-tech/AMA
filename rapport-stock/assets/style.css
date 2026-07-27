@@ -288,3 +288,187 @@ body {
         white-space: normal;
     }
 }
+
+/* ============================================================
+   Tableau de bord Occupation
+   ============================================================ */
+.maj {
+    font-size: 0.85rem;
+    color: #616e7c;
+}
+
+.section-title {
+    margin: 2rem 0 0.75rem;
+}
+
+.dash {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: stretch;
+    margin-bottom: 1.5rem;
+}
+
+/* Jauge circulaire */
+.gauge-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 240px;
+}
+
+.gauge {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gauge-hole {
+    width: 130px;
+    height: 130px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.gauge-pct {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.gauge-sub {
+    font-size: 0.85rem;
+    color: #616e7c;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+}
+
+.depassement {
+    color: #c92a2a;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 0.75rem 0 0;
+    text-align: center;
+}
+
+/* Indicateurs clés */
+.kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    flex: 1;
+    min-width: 280px;
+}
+
+.kpi {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.kpi-label {
+    font-size: 0.78rem;
+    color: #616e7c;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.kpi-value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0.2rem 0;
+}
+
+.kpi-unit {
+    font-size: 0.78rem;
+    color: #97a3af;
+}
+
+/* Barre d'occupation */
+.occ-bar-wrap {
+    margin-bottom: 1.5rem;
+}
+
+.occ-bar {
+    height: 34px;
+    background: #e9ecef;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.occ-bar-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.6rem;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: width 0.4s ease;
+    min-width: 2px;
+}
+
+.occ-bar-legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #4b5563;
+}
+
+.occ-bar-legend .dot {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 3px;
+    margin-right: 0.35rem;
+    vertical-align: middle;
+}
+
+/* Grille des emplacements */
+.pallet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 20px);
+    gap: 4px;
+    margin: 0.5rem 0;
+}
+
+.cell {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    background: #e9ecef;
+}
+
+.cell-free {
+    background: #e9ecef;
+    border: 1px solid #dee2e6;
+}
+
+@media print {
+    .dash, .kpis {
+        break-inside: avoid;
+    }
+}

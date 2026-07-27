@@ -417,3 +417,68 @@ function calculer_totaux(array $lignes): array
     }
     return $totaux;
 }
+
+/**
+ * Calcule l'occupation du magasin en palettes.
+ *
+ * Palettes occupées par article = ceil(Disponible / Qté par palette).
+ * (Une palette entamée occupe un emplacement complet.) Les articles sans
+ * quantité par palette (0 ou vide) ne sont pas comptabilisés et sont signalés.
+ *
+ * @param array<int, array<string, mixed>> $lignes
+ * @param float $capacite Capacité totale du magasin, en emplacements palette.
+ * @return array{
+ *     capacite:float, occupees:float, libres:float,
+ *     taux_occupation:float, taux_disponible:float, depassement:bool,
+ *     nb_articles:int, nb_sans_palette:int,
+ *     details:array<int,array{code:string,nom:string,disponible:float,par_palette:float,palettes:float,sans_palette:bool}>
+ * }
+ */
+function calculer_occupation(array $lignes, float $capacite): array
+{
+    $occupees      = 0.0;
+    $nbSansPalette = 0;
+    $details       = [];
+
+    foreach ($lignes as $l) {
+        $dispo  = (float) ($l['Disponible'] ?? 0);
+        $parPal = (float) ($l['U_Qte_Palette'] ?? 0);
+
+        $sansPalette = ($parPal <= 0);
+        if ($sansPalette) {
+            $nbSansPalette++;
+            $palettes = 0.0;
+        } else {
+            $palettes = $dispo > 0 ? (float) ceil($dispo / $parPal) : 0.0;
+        }
+        $occupees += $palettes;
+
+        $details[] = [
+            'code'        => (string) ($l['Item Code'] ?? ''),
+            'nom'         => (string) ($l['Item Name'] ?? ''),
+            'disponible'  => $dispo,
+            'par_palette' => $parPal,
+            'palettes'    => $palettes,
+            'sans_palette' => $sansPalette,
+        ];
+    }
+
+    // Tri des détails par palettes décroissantes (plus gros consommateurs d'abord).
+    usort($details, static fn($a, $b) => $b['palettes'] <=> $a['palettes']);
+
+    $libres        = $capacite > 0 ? max($capacite - $occupees, 0.0) : 0.0;
+    $tauxOcc       = $capacite > 0 ? $occupees / $capacite * 100 : 0.0;
+    $tauxDispo     = $capacite > 0 ? max(100 - $tauxOcc, 0.0) : 0.0;
+
+    return [
+        'capacite'        => $capacite,
+        'occupees'        => $occupees,
+        'libres'          => $libres,
+        'taux_occupation' => $tauxOcc,
+        'taux_disponible' => $tauxDispo,
+        'depassement'     => $capacite > 0 && $occupees > $capacite,
+        'nb_articles'     => count($lignes),
+        'nb_sans_palette' => $nbSansPalette,
+        'details'         => $details,
+    ];
+}
