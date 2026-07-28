@@ -48,7 +48,8 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="report-head">
-    <h2>Suivi de stock<?= MAGASIN_FILTRE !== '' ? ' — ' . htmlspecialchars(MAGASIN_FILTRE) : '' ?></h2>
+    <?php $magAutorises = magasins_autorises(); ?>
+    <h2>Suivi de stock<?= $magAutorises ? ' — ' . htmlspecialchars(implode(', ', $magAutorises)) : '' ?></h2>
     <?php if (!$erreur): ?>
         <a class="btn-export no-print"
            href="export.php?<?= htmlspecialchars(http_build_query($_GET)) ?>">Exporter en CSV</a>
@@ -80,7 +81,7 @@ require_once __DIR__ . '/includes/header.php';
 <?php else: ?>
 
     <form class="filters no-print" method="get" action="index.php">
-        <?php if (MAGASIN_FILTRE === ''): ?>
+        <?php if (count($magasins) > 1): ?>
         <div class="field">
             <label for="magasin">Magasin</label>
             <select name="magasin" id="magasin">

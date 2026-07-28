@@ -68,9 +68,10 @@ function charger_toutes_lignes(): array
 
     // En mode CSV, la restriction magasin est appliquée ici (les modes SQL/ADO
     // la poussent déjà dans la requête pour ne transférer que les lignes utiles).
-    if (DATA_SOURCE === 'csv' && defined('MAGASIN_FILTRE') && MAGASIN_FILTRE !== '') {
-        $lignes = array_values(array_filter($lignes, static function ($l) {
-            return (string) ($l['Magasin'] ?? '') === MAGASIN_FILTRE;
+    $magAutorises = magasins_autorises();
+    if (DATA_SOURCE === 'csv' && $magAutorises) {
+        $lignes = array_values(array_filter($lignes, static function ($l) use ($magAutorises) {
+            return in_array((string) ($l['Magasin'] ?? ''), $magAutorises, true);
         }));
     }
 
@@ -97,16 +98,33 @@ function colonnes_sql(): string
 }
 
 /**
+ * Liste des magasins autorisés (constante MAGASIN_FILTRE, séparés par des
+ * virgules). Tableau vide = tous les magasins.
+ *
+ * @return string[]
+ */
+function magasins_autorises(): array
+{
+    if (!defined('MAGASIN_FILTRE') || trim(MAGASIN_FILTRE) === '') {
+        return [];
+    }
+    $liste = array_map('trim', explode(',', MAGASIN_FILTRE));
+    return array_values(array_filter($liste, static fn($m) => $m !== ''));
+}
+
+/**
  * Clause WHERE (inline) restreignant au magasin configuré, ou '' si aucun.
  * MAGASIN_FILTRE est une constante de configuration (pas une saisie utilisateur) ;
  * les apostrophes sont malgré tout échappées par sécurité.
  */
 function where_magasin_sql(): string
 {
-    if (!defined('MAGASIN_FILTRE') || MAGASIN_FILTRE === '') {
+    $mags = magasins_autorises();
+    if (!$mags) {
         return '';
     }
-    return " WHERE [Magasin] = '" . str_replace("'", "''", MAGASIN_FILTRE) . "'";
+    $quoted = array_map(static fn($m) => "'" . str_replace("'", "''", $m) . "'", $mags);
+    return ' WHERE [Magasin] IN (' . implode(', ', $quoted) . ')';
 }
 
 /**
@@ -193,12 +211,19 @@ function charger_depuis_pdo_odbc(): array
  */
 function charger_via_pdo(PDO $pdo): array
 {
-    $sql = 'SELECT ' . colonnes_sql() . ' FROM [dbo].[V_BH_STGlob]';
+    $sql  = 'SELECT ' . colonnes_sql() . ' FROM [dbo].[V_BH_STGlob]';
+    $mags = magasins_autorises();
 
-    if (defined('MAGASIN_FILTRE') && MAGASIN_FILTRE !== '') {
-        $sql .= ' WHERE [Magasin] = :magasin';
+    if ($mags) {
+        $params = [];
+        $ph     = [];
+        foreach ($mags as $i => $m) {
+            $ph[] = ':mag' . $i;
+            $params[':mag' . $i] = $m;
+        }
+        $sql .= ' WHERE [Magasin] IN (' . implode(', ', $ph) . ')';
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([':magasin' => MAGASIN_FILTRE]);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

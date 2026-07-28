@@ -111,7 +111,8 @@ try {
 function fmt($v, int $d = 0): string { return number_format((float) $v, $d, ',', ' '); }
 function coul_taux(float $t): string { return $t >= 90 ? '#c92a2a' : ($t >= 70 ? '#e8590c' : '#2b8a3e'); }
 
-$magasin = MAGASIN_FILTRE !== '' ? MAGASIN_FILTRE : 'Tous magasins';
+$magAutorises = magasins_autorises();
+$magasin = $magAutorises ? implode(', ', $magAutorises) : 'Tous magasins';
 
 require_once __DIR__ . '/includes/header.php';
 ?>

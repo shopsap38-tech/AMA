@@ -23,9 +23,10 @@ const DATA_SOURCE = 'ado'; // 'ado', 'pdo_odbc', 'csv' ou 'sqlserver'
 // -----------------------------------------------------------------------------
 
 // ---- Restriction magasin ----------------------------------------------------
-// Si non vide, le rapport ne montre QUE ce magasin (données, totaux, export).
-// Mettez '' pour afficher tous les magasins.
-const MAGASIN_FILTRE = 'MAG_FMCG';
+// Liste des magasins autorisés, séparés par des virgules. Le rapport ne montre
+// QUE ces magasins (données, totaux, export) ; le menu déroulant permet de
+// choisir l'un d'eux ou « Tous ». Mettez '' pour afficher tous les magasins.
+const MAGASIN_FILTRE = 'MAG_FMCG,MAG_DOT,MAG_BLOC';
 // -----------------------------------------------------------------------------
 
 // ---- Capacité du magasin (page Occupation) ----------------------------------

@@ -29,7 +29,8 @@ function couleur_taux(float $taux): string
     return '#2b8a3e';                      // vert : confortable
 }
 
-$magasin = MAGASIN_FILTRE !== '' ? MAGASIN_FILTRE : 'Tous magasins';
+$magAutorises = magasins_autorises();
+$magasin = $magAutorises ? implode(', ', $magAutorises) : 'Tous magasins';
 
 require_once __DIR__ . '/includes/header.php';
 ?>
