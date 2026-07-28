@@ -31,7 +31,7 @@ const MAGASIN_FILTRE = 'MAG_FMCG';
 // ---- Capacité du magasin (page Occupation) ----------------------------------
 // Nombre TOTAL d'emplacements palette du magasin ci-dessus. Sert à calculer le
 // taux d'occupation. REMPLACEZ par la capacité réelle de votre magasin FMCG.
-const CAPACITE_PALETTES = 20;
+const CAPACITE_PALETTES = 11600;
 // -----------------------------------------------------------------------------
 
 // ---- Mode ADO / OLE DB (SQL Server sans ODBC) -------------------------------
