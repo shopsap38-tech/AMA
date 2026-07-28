@@ -472,3 +472,84 @@ body {
         break-inside: avoid;
     }
 }
+
+/* --- Entrepôt 3D --- */
+.btn3d {
+    background: #fff;
+    border: 1px solid #cbd2d9;
+    color: #1f2933;
+    padding: 0.45rem 0.9rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.btn3d.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+}
+.btn3d:hover { border-color: #2563eb; }
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #fff;
+    border: 1px solid #cbd2d9;
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: #1f2933;
+}
+.chip.active {
+    border-color: #1f2933;
+    background: #1f2933;
+    color: #fff;
+}
+.chip-dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+#scene-wrap {
+    position: relative;
+    background: #eef1f4;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+#scene {
+    width: 100%;
+    height: 600px;
+}
+#scene-tip {
+    position: absolute;
+    display: none;
+    background: rgba(31, 41, 51, 0.92);
+    color: #fff;
+    padding: 0.3rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+}
+.scene-help {
+    position: absolute;
+    left: 0.75rem;
+    bottom: 0.6rem;
+    font-size: 0.78rem;
+    color: #4b5563;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}

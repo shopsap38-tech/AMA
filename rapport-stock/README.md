@@ -13,6 +13,8 @@ SQL Server `[dbo].[V_BH_STGlob]` (base SAP Business One) hébergée sur
   article, nom, code-barres), et option pour **masquer les articles inactifs**.
 - **Tableau de bord Occupation** (`occupation.php`) : taux d'occupation du
   magasin en palettes, en temps réel (jauge, indicateurs, grille d'emplacements).
+- **Entrepôt 3D** (`entrepot3d.php`) : visualisation 3D interactive des palettes
+  dans des racks, colorées par catégorie (rotation, zoom, filtres, KPI).
 - **Tri** cliquable sur les colonnes principales.
 - **Cartes de synthèse** : nombre d'articles, total disponible, valeur totale.
 - **Export CSV** (compatible Excel : séparateur `;` + BOM UTF-8).
@@ -163,6 +165,26 @@ La page `occupation.php` calcule l'occupation du magasin en **palettes** :
 > Les articles sans « Qté/Palette » renseignée ne sont pas comptabilisés (et
 > sont signalés). La grille visuelle s'affiche quand la capacité ≤ 300.
 
+## Entrepôt 3D
+
+La page `entrepot3d.php` affiche l'entrepôt en **3D interactive** (Three.js,
+embarqué localement dans `assets/vendor/` — aucun accès Internet requis) :
+
+- chaque **palette occupée** est une boîte 3D placée dans des bâtis de rack ;
+  les emplacements libres restent en fil de fer (capacité vs occupation) ;
+- **couleur par catégorie** (`U_u_cat`), avec légende et filtres cliquables ;
+- **KPI** : capacité, palettes occupées/libres, taux d'occupation / espace libre ;
+- navigation souris : glisser = pivoter, molette = zoom, clic droit = déplacer ;
+  boutons « Rotation auto » et « Recentrer ».
+
+> **Note sur les données** : la vue `V_BH_STGlob` ne contient ni l'ancienneté
+> des palettes ni le plan physique (allée/niveau). Contrairement à un outil type
+> Power BI « Bodega 3D » (qui colore par ancienneté et positionne chaque palette
+> réelle), cette page **calcule** les palettes depuis le stock et les **dispose
+> dans une grille de racks générée**, colorées par catégorie. Si vous disposez
+> d'un champ d'ancienneté ou d'un plan (allée/niveau/position), on peut brancher
+> un feu tricolore (vert/jaune/rouge) et un placement fidèle.
+
 ## Diagnostic
 
 Ouvrez `http://localhost/rapport-stock/test.php` : la page vérifie, selon le
@@ -214,6 +236,8 @@ rapport-stock/
 ├── includes/report.php     Chargement + filtres + tri + totaux
 ├── index.php               Rapport (filtres, tri, synthèse)
 ├── occupation.php          Tableau de bord d'occupation (palettes)
+├── entrepot3d.php          Visualisation 3D de l'entrepôt
+├── assets/vendor/          Three.js + OrbitControls (embarqués, hors-ligne)
 ├── export.php              Export CSV
 ├── outils/export-stock.ps1 Export SQL Server -> CSV via .NET (sans ODBC)
 ├── test.php                Page de diagnostic

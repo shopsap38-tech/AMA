@@ -74,6 +74,19 @@ function charger_toutes_lignes(): array
         }));
     }
 
+    // Normalise les colonnes numériques quelle que soit la source (ADO, ODBC,
+    // PDO ou CSV) : gère la virgule décimale et les séparateurs de milliers.
+    // Évite qu'une valeur comme « 0,5 » soit tronquée à 0 par un cast (float) brut,
+    // ce qui fausserait le calcul des palettes.
+    foreach ($lignes as &$ligne) {
+        foreach (COLONNES_NUM as $col) {
+            if (isset($ligne[$col]) && $ligne[$col] !== null) {
+                $ligne[$col] = parse_nombre($ligne[$col]);
+            }
+        }
+    }
+    unset($ligne);
+
     return $lignes;
 }
 
