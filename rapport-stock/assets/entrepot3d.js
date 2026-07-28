@@ -1,5 +1,6 @@
 /* Entrepôt 3D — visualisation de l'occupation en palettes (Three.js r128).
-   Lit window.WAREHOUSE_DATA fourni par entrepot3d.php. */
+   Rendu INSTANCIÉ (InstancedMesh) pour supporter de grandes capacités
+   (plusieurs milliers d'emplacements). Lit window.WAREHOUSE_DATA. */
 (function () {
   'use strict';
 
@@ -9,32 +10,30 @@
   var container = document.getElementById('scene');
   if (!container) { return; }
 
-  // --- Paramètres de disposition ---
+  // --- Disposition ---
   var LEVELS = D.levels || 3;
   var slotW = 1.1, slotH = 1.2, slotD = 1.1;
-  var aisleGap = 1.6;          // espace (allée) tous les 2 rangs
-  var occupied = D.slots.length;
-  var total = Math.max(D.capacity, occupied);
+  var aisleGap = 1.8;                       // allée tous les 2 rangs
+  var occupiedCount = D.slots.length;
+  var capacity = Math.max(D.capacity, 0);
+  var total = Math.max(capacity, occupiedCount);
+  var freeCount = Math.max(capacity - occupiedCount, 0);
   var columns = Math.max(1, Math.ceil(total / LEVELS));
-  var perRow = Math.max(6, Math.round(Math.sqrt(columns * 2)));
+  var perRow = Math.max(8, Math.round(Math.sqrt(columns * 2)));
   var rows = Math.ceil(columns / perRow);
 
-  function colPos(col) {
+  function slotPos(i) {
+    var col = Math.floor(i / LEVELS);
+    var level = i % LEVELS;
     var r = Math.floor(col / perRow);
     var cInRow = col % perRow;
     return {
       x: cInRow * slotW,
+      y: level * slotH + slotH / 2,
       z: r * slotD + Math.floor(r / 2) * aisleGap
     };
   }
-  function slotPos(i) {
-    var col = Math.floor(i / LEVELS);
-    var level = i % LEVELS;
-    var p = colPos(col);
-    return { x: p.x, y: level * slotH + slotH / 2, z: p.z };
-  }
 
-  // Centre de la scène (pour recentrer la caméra)
   var extentX = perRow * slotW;
   var extentZ = rows * slotD + Math.floor(rows / 2) * aisleGap;
   var cx = extentX / 2, cz = extentZ / 2;
@@ -44,12 +43,15 @@
   scene.background = new THREE.Color(0xeef1f4);
 
   var w = container.clientWidth, h = container.clientHeight || 600;
-  var camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 5000);
-  var dist = Math.max(extentX, extentZ) * 1.1 + 12;
-  camera.position.set(cx + dist * 0.6, dist * 0.7, cz + dist);
+  var camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100000);
+  var dist = Math.max(extentX, extentZ) * 0.9 + 14;
+  function defaultCam() {
+    camera.position.set(cx + dist * 0.55, dist * 0.75, cz + dist);
+  }
+  defaultCam();
 
   var renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(w, h);
   container.appendChild(renderer.domElement);
 
@@ -58,67 +60,102 @@
   controls.dampingFactor = 0.08;
   controls.target.set(cx, LEVELS * slotH / 2, cz);
   controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.8;
+  controls.autoRotateSpeed = 0.7;
   controls.update();
 
   // Lumières
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 0.95));
-  var dir = new THREE.DirectionalLight(0xffffff, 0.6);
-  dir.position.set(cx + 20, 40, cz + 20);
-  scene.add(dir);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 1.0));
+  var dl = new THREE.DirectionalLight(0xffffff, 0.55);
+  dl.position.set(cx + 30, 60, cz + 30);
+  scene.add(dl);
 
-  // Sol
-  var floorGeo = new THREE.PlaneGeometry(extentX + 12, extentZ + 12);
-  var floorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
-  var floor = new THREE.Mesh(floorGeo, floorMat);
+  // Sol + grille
+  var floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(extentX + 16, extentZ + 16),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 })
+  );
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(cx, 0, cz);
   scene.add(floor);
-  var grid = new THREE.GridHelper(Math.max(extentX, extentZ) + 12, Math.max(perRow, rows) + 6, 0xced4da, 0xe9ecef);
+  var grid = new THREE.GridHelper(Math.max(extentX, extentZ) + 16,
+    Math.max(perRow, rows) + 6, 0xced4da, 0xe9ecef);
   grid.position.set(cx, 0.01, cz);
   scene.add(grid);
 
-  // --- Bâtis de rack (fil de fer) par colonne ---
-  var bayMat = new THREE.LineBasicMaterial({ color: 0x8a97a5 });
-  for (var c = 0; c < columns; c++) {
-    var p = colPos(c);
-    var g = new THREE.BoxGeometry(slotW * 0.98, LEVELS * slotH, slotD * 0.98);
-    var edges = new THREE.LineSegments(new THREE.EdgesGeometry(g), bayMat);
-    edges.position.set(p.x, LEVELS * slotH / 2, p.z);
-    scene.add(edges);
-    g.dispose();
-  }
-
-  // --- Palettes occupées (boîtes colorées) ---
+  // --- Palettes occupées (InstancedMesh coloré) ---
   var boxGeo = new THREE.BoxGeometry(slotW * 0.82, slotH * 0.82, slotD * 0.82);
-  var catMats = D.categories.map(function (c) {
-    return new THREE.MeshStandardMaterial({ color: new THREE.Color(c.color), roughness: 0.6, metalness: 0.05 });
-  });
-  var alertMats = (D.alertes || []).map(function (a) {
-    return new THREE.MeshStandardMaterial({ color: new THREE.Color(a.color), roughness: 0.6, metalness: 0.05 });
-  });
-  var allMeshes = [];
-  var meshesByCat = {};
-  for (var i = 0; i < occupied; i++) {
-    var catIdx = D.slots[i];
-    var alertIdx = (D.slotsAlert && D.slotsAlert[i] != null) ? D.slotsAlert[i] : 0;
-    var pos = slotPos(i);
-    var m = new THREE.Mesh(boxGeo, catMats[catIdx]);
-    m.position.set(pos.x, pos.y, pos.z);
-    m.userData = { cat: catIdx, alerte: alertIdx };
-    scene.add(m);
-    allMeshes.push(m);
-    (meshesByCat[catIdx] = meshesByCat[catIdx] || []).push(m);
+  var occMat = new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.05 });
+  var occMesh = new THREE.InstancedMesh(boxGeo, occMat, Math.max(occupiedCount, 1));
+  occMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+  var catColors = (D.categories || []).map(function (c) { return new THREE.Color(c.color); });
+  var alertColors = (D.alertes || []).map(function (a) { return new THREE.Color(a.color); });
+
+  var dummy = new THREE.Object3D();
+  var catOf = D.slots;
+  var alertOf = D.slotsAlert || [];
+
+  // Répartit les palettes occupées sur toute l'emprise de l'entrepôt (au lieu
+  // d'un bloc compact) pour un rendu réaliste, même à faible taux d'occupation.
+  var slotIndexForOcc = new Array(occupiedCount);
+  var step = occupiedCount > 0 ? (total / occupiedCount) : 1;
+  for (var i = 0; i < occupiedCount; i++) {
+    slotIndexForOcc[i] = Math.min(total - 1, Math.round(i * step));
   }
 
-  // Bascule du mode de couleur (catégorie / alerte stock).
-  function setColorMode(mode) {
-    for (var j = 0; j < allMeshes.length; j++) {
-      var mm = allMeshes[j];
-      mm.material = (mode === 'alert' && alertMats.length)
-        ? alertMats[mm.userData.alerte]
-        : catMats[mm.userData.cat];
+  function placeOcc(k, visible) {
+    var p = slotPos(slotIndexForOcc[k]);
+    dummy.position.set(p.x, visible ? p.y : -1000, p.z);
+    dummy.scale.set(1, visible ? 1 : 0.0001, 1);
+    dummy.updateMatrix();
+    occMesh.setMatrixAt(k, dummy.matrix);
+  }
+
+  for (var k0 = 0; k0 < occupiedCount; k0++) {
+    placeOcc(k0, true);
+    occMesh.setColorAt(k0, catColors[catOf[k0]] || new THREE.Color(0x888888));
+  }
+  occMesh.instanceMatrix.needsUpdate = true;
+  if (occMesh.instanceColor) { occMesh.instanceColor.needsUpdate = true; }
+  scene.add(occMesh);
+
+  // --- Emplacements libres ---
+  // Rendus en boîtes translucides seulement si peu nombreux (sinon la grille au
+  // sol suffit et l'on évite une nappe opaque + un surcoût de rendu).
+  var freeMesh = null;
+  if (freeCount > 0 && freeCount <= 3000) {
+    var used = {};
+    for (var u = 0; u < occupiedCount; u++) { used[slotIndexForOcc[u]] = 1; }
+    var freePositions = [];
+    for (var s = 0; s < total && freePositions.length < freeCount; s++) {
+      if (!used[s]) { freePositions.push(s); }
     }
+    var freeMat = new THREE.MeshStandardMaterial({
+      color: 0xb9c2cc, roughness: 1, transparent: true, opacity: 0.18
+    });
+    freeMesh = new THREE.InstancedMesh(boxGeo, freeMat, freePositions.length);
+    for (var f = 0; f < freePositions.length; f++) {
+      var pf = slotPos(freePositions[f]);
+      dummy.position.set(pf.x, pf.y, pf.z);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      freeMesh.setMatrixAt(f, dummy.matrix);
+    }
+    freeMesh.instanceMatrix.needsUpdate = true;
+    scene.add(freeMesh);
+  }
+
+  controls.target.set(cx, LEVELS * slotH / 2, cz);
+  controls.update();
+
+  // --- Couleur : catégorie / alerte ---
+  function setColorMode(mode) {
+    var colors = (mode === 'alert') ? alertColors : catColors;
+    var keyOf = (mode === 'alert') ? alertOf : catOf;
+    for (var k = 0; k < occupiedCount; k++) {
+      occMesh.setColorAt(k, colors[keyOf[k]] || new THREE.Color(0x888888));
+    }
+    if (occMesh.instanceColor) { occMesh.instanceColor.needsUpdate = true; }
   }
   var mCat = document.getElementById('mode-cat');
   var mAlert = document.getElementById('mode-alert');
@@ -137,11 +174,24 @@
     });
   }
 
-  // Recentrage caméra final
-  controls.target.set(cx, LEVELS * slotH / 2, cz);
-  controls.update();
+  // --- Filtre par catégorie (masque en déplaçant hors champ) ---
+  function applyFilter(sel) {
+    for (var k = 0; k < occupiedCount; k++) {
+      placeOcc(k, (sel === -1) || (catOf[k] === sel));
+    }
+    occMesh.instanceMatrix.needsUpdate = true;
+  }
+  var chips = document.querySelectorAll('[data-cat]');
+  Array.prototype.forEach.call(chips, function (chip) {
+    chip.addEventListener('click', function () {
+      var sel = parseInt(chip.getAttribute('data-cat'), 10);
+      Array.prototype.forEach.call(chips, function (c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+      applyFilter(sel);
+    });
+  });
 
-  // --- Interactions UI ---
+  // --- Contrôles ---
   var btnRotate = document.getElementById('btn-rotate');
   if (btnRotate) {
     btnRotate.addEventListener('click', function () {
@@ -152,27 +202,13 @@
   var btnReset = document.getElementById('btn-reset-view');
   if (btnReset) {
     btnReset.addEventListener('click', function () {
-      camera.position.set(cx + dist * 0.6, dist * 0.7, cz + dist);
+      defaultCam();
       controls.target.set(cx, LEVELS * slotH / 2, cz);
       controls.update();
     });
   }
 
-  // Filtres par catégorie (chips avec data-cat ; -1 = tout)
-  var chips = document.querySelectorAll('[data-cat]');
-  Array.prototype.forEach.call(chips, function (chip) {
-    chip.addEventListener('click', function () {
-      var sel = parseInt(chip.getAttribute('data-cat'), 10);
-      Array.prototype.forEach.call(chips, function (c) { c.classList.remove('active'); });
-      chip.classList.add('active');
-      Object.keys(meshesByCat).forEach(function (k) {
-        var visible = (sel === -1) || (parseInt(k, 10) === sel);
-        meshesByCat[k].forEach(function (m) { m.visible = visible; });
-      });
-    });
-  });
-
-  // Survol : info-bulle catégorie
+  // --- Survol : info-bulle (instanceId) ---
   var tip = document.getElementById('scene-tip');
   var ray = new THREE.Raycaster();
   var mouse = new THREE.Vector2();
@@ -182,13 +218,14 @@
     mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     ray.setFromCamera(mouse, camera);
-    var hits = ray.intersectObjects(scene.children.filter(function (o) { return o.userData && o.userData.cat != null; }));
-    if (hits.length) {
-      var cat = D.categories[hits[0].object.userData.cat];
+    var hit = ray.intersectObject(occMesh);
+    if (hit.length && hit[0].instanceId != null) {
+      var id = hit[0].instanceId;
+      var cat = D.categories[catOf[id]];
       tip.style.display = 'block';
       tip.style.left = (e.clientX - rect.left + 12) + 'px';
       tip.style.top = (e.clientY - rect.top + 12) + 'px';
-      tip.textContent = cat.name + ' — ' + cat.count + ' palette(s)';
+      tip.textContent = cat ? (cat.name + ' — ' + cat.count + ' palette(s)') : 'palette';
     } else {
       tip.style.display = 'none';
     }
@@ -197,7 +234,7 @@
     if (tip) { tip.style.display = 'none'; }
   });
 
-  // --- Boucle de rendu ---
+  // --- Rendu ---
   function animate() {
     requestAnimationFrame(animate);
     controls.update();

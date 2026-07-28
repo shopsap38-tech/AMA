@@ -81,8 +81,8 @@ try {
     foreach ($alertes as $i => &$a) { $a['count'] = $alerteCount[$i]; }
     unset($a);
 
-    // Emplacements occupés (plafonnés pour la performance 3D).
-    $capRender  = 5000;
+    // Emplacements occupés (plafonnés ; rendu instancié => grande capacité OK).
+    $capRender  = 30000;
     $pallets    = array_slice($pallets, 0, $capRender);
     $slots      = array_map(static fn($p) => $p['cat'], $pallets);
     $slotsAlert = array_map(static fn($p) => $p['alerte'], $pallets);

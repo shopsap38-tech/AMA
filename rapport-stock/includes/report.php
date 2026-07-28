@@ -460,9 +460,11 @@ function calculer_occupation(array $lignes, float $capacite): array
         $sansPalette = ($parPal <= 0);
         if ($sansPalette) {
             $nbSansPalette++;
-            $palettes = 0.0;
+            $palettes = 0;
         } else {
-            $palettes = $dispo > 0 ? (float) ceil($dispo / $parPal) : 0.0;
+            // Une palette entamée occupe un emplacement complet : arrondi au supérieur.
+            // Résultat TOUJOURS entier (ex. Disponible 2 / 45 par palette => 1, jamais 0,044).
+            $palettes = $dispo > 0 ? (int) ceil($dispo / $parPal) : 0;
         }
         $occupees += $palettes;
 
