@@ -91,18 +91,50 @@
 
   // --- Palettes occupées (boîtes colorées) ---
   var boxGeo = new THREE.BoxGeometry(slotW * 0.82, slotH * 0.82, slotD * 0.82);
-  var mats = D.categories.map(function (c) {
+  var catMats = D.categories.map(function (c) {
     return new THREE.MeshStandardMaterial({ color: new THREE.Color(c.color), roughness: 0.6, metalness: 0.05 });
   });
+  var alertMats = (D.alertes || []).map(function (a) {
+    return new THREE.MeshStandardMaterial({ color: new THREE.Color(a.color), roughness: 0.6, metalness: 0.05 });
+  });
+  var allMeshes = [];
   var meshesByCat = {};
   for (var i = 0; i < occupied; i++) {
     var catIdx = D.slots[i];
+    var alertIdx = (D.slotsAlert && D.slotsAlert[i] != null) ? D.slotsAlert[i] : 0;
     var pos = slotPos(i);
-    var m = new THREE.Mesh(boxGeo, mats[catIdx]);
+    var m = new THREE.Mesh(boxGeo, catMats[catIdx]);
     m.position.set(pos.x, pos.y, pos.z);
-    m.userData = { cat: catIdx };
+    m.userData = { cat: catIdx, alerte: alertIdx };
     scene.add(m);
+    allMeshes.push(m);
     (meshesByCat[catIdx] = meshesByCat[catIdx] || []).push(m);
+  }
+
+  // Bascule du mode de couleur (catégorie / alerte stock).
+  function setColorMode(mode) {
+    for (var j = 0; j < allMeshes.length; j++) {
+      var mm = allMeshes[j];
+      mm.material = (mode === 'alert' && alertMats.length)
+        ? alertMats[mm.userData.alerte]
+        : catMats[mm.userData.cat];
+    }
+  }
+  var mCat = document.getElementById('mode-cat');
+  var mAlert = document.getElementById('mode-alert');
+  var chipsCat = document.getElementById('chips-cat');
+  var legAlert = document.getElementById('legend-alert');
+  if (mCat && mAlert) {
+    mCat.addEventListener('click', function () {
+      setColorMode('cat'); mCat.classList.add('active'); mAlert.classList.remove('active');
+      if (chipsCat) { chipsCat.style.display = ''; }
+      if (legAlert) { legAlert.style.display = 'none'; }
+    });
+    mAlert.addEventListener('click', function () {
+      setColorMode('alert'); mAlert.classList.add('active'); mCat.classList.remove('active');
+      if (chipsCat) { chipsCat.style.display = 'none'; }
+      if (legAlert) { legAlert.style.display = 'flex'; }
+    });
   }
 
   // Recentrage caméra final
