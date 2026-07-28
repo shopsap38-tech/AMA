@@ -434,9 +434,9 @@ function calculer_totaux(array $lignes): array
 /**
  * Calcule l'occupation du magasin en palettes.
  *
- * Palettes occupées par article = ceil(Disponible / Qté par palette).
- * (Une palette entamée occupe un emplacement complet.) Les articles sans
- * quantité par palette (0 ou vide) ne sont pas comptabilisés et sont signalés.
+ * Fraction de palette par article = Disponible / Qté par palette (SANS arrondi).
+ * Ex. Disponible 2 / 45 => 0,0444. Les articles sans quantité par palette
+ * (0 ou vide) ne sont pas comptabilisés et sont signalés.
  *
  * @param array<int, array<string, mixed>> $lignes
  * @param float $capacite Capacité totale du magasin, en emplacements palette.
@@ -460,11 +460,11 @@ function calculer_occupation(array $lignes, float $capacite): array
         $sansPalette = ($parPal <= 0);
         if ($sansPalette) {
             $nbSansPalette++;
-            $palettes = 0;
+            $palettes = 0.0;
         } else {
-            // Une palette entamée occupe un emplacement complet : arrondi au supérieur.
-            // Résultat TOUJOURS entier (ex. Disponible 2 / 45 par palette => 1, jamais 0,044).
-            $palettes = $dispo > 0 ? (int) ceil($dispo / $parPal) : 0;
+            // Fraction de palette = division réelle, SANS arrondi.
+            // Ex. Disponible 2 / 45 par palette => 0,0444 (fraction), et non 1.
+            $palettes = $dispo > 0 ? $dispo / $parPal : 0.0;
         }
         $occupees += $palettes;
 

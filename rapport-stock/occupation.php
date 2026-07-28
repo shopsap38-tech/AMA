@@ -82,12 +82,12 @@ require_once __DIR__ . '/includes/header.php';
             </div>
             <div class="kpi">
                 <span class="kpi-label">Palettes occupées</span>
-                <span class="kpi-value" style="color:<?= $couleur ?>;"><?= fmt($occ['occupees']) ?></span>
-                <span class="kpi-unit">palettes</span>
+                <span class="kpi-value" style="color:<?= $couleur ?>;"><?= fmt($occ['occupees'], 2) ?></span>
+                <span class="kpi-unit">palettes (fraction)</span>
             </div>
             <div class="kpi">
                 <span class="kpi-label">Palettes libres</span>
-                <span class="kpi-value" style="color:#2b8a3e;"><?= fmt($occ['libres']) ?></span>
+                <span class="kpi-value" style="color:#2b8a3e;"><?= fmt($occ['libres'], 2) ?></span>
                 <span class="kpi-unit">palettes</span>
             </div>
             <div class="kpi">
@@ -108,13 +108,13 @@ require_once __DIR__ . '/includes/header.php';
         <div class="occ-bar">
             <div class="occ-bar-fill" style="width:<?= min($occ['taux_occupation'], 100) ?>%;background:<?= $couleur ?>;">
                 <?php if ($occ['taux_occupation'] >= 12): ?>
-                    <?= fmt($occ['occupees']) ?> occupées
+                    <?= fmt($occ['occupees'], 2) ?> occupées
                 <?php endif; ?>
             </div>
         </div>
         <div class="occ-bar-legend">
-            <span><span class="dot" style="background:<?= $couleur ?>;"></span> Occupées : <?= fmt($occ['occupees']) ?></span>
-            <span><span class="dot" style="background:#e9ecef;"></span> Libres : <?= fmt($occ['libres']) ?></span>
+            <span><span class="dot" style="background:<?= $couleur ?>;"></span> Occupées : <?= fmt($occ['occupees'], 2) ?></span>
+            <span><span class="dot" style="background:#e9ecef;"></span> Libres : <?= fmt($occ['libres'], 2) ?></span>
             <span>Total : <?= fmt($occ['capacite']) ?></span>
         </div>
     </div>
@@ -149,7 +149,7 @@ require_once __DIR__ . '/includes/header.php';
                 <th>Article</th>
                 <th class="num">Disponible</th>
                 <th class="num">Qté/Palette</th>
-                <th class="num">Palettes occupées</th>
+                <th class="num">Palettes occupées (fraction)</th>
             </tr>
         </thead>
         <tbody>
@@ -159,14 +159,14 @@ require_once __DIR__ . '/includes/header.php';
                     <td><?= htmlspecialchars($d['nom']) ?></td>
                     <td class="num"><?= fmt($d['disponible'], 2) ?></td>
                     <td class="num"><?= $d['sans_palette'] ? '—' : fmt($d['par_palette'], 2) ?></td>
-                    <td class="num"><strong><?= $d['sans_palette'] ? '—' : fmt($d['palettes']) ?></strong></td>
+                    <td class="num"><strong><?= $d['sans_palette'] ? '—' : fmt($d['palettes'], 4) ?></strong></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="4"><strong>Total palettes occupées</strong></td>
-                <td class="num"><strong><?= fmt($occ['occupees']) ?></strong></td>
+                <td colspan="4"><strong>Total palettes occupées (fraction)</strong></td>
+                <td class="num"><strong><?= fmt($occ['occupees'], 2) ?></strong></td>
             </tr>
         </tfoot>
     </table>

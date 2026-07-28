@@ -150,8 +150,9 @@ const DB_PASS = '1AQWXCV';
 
 La page `occupation.php` calcule l'occupation du magasin en **palettes** :
 
-- **Palettes occupées** par article = `plafond(Disponible ÷ Qté par palette)`
-  (une palette entamée occupe un emplacement complet), puis somme sur le magasin.
+- **Palettes occupées (fraction)** par article = `Disponible ÷ Qté par palette`
+  (valeur décimale réelle, SANS arrondi ; ex. 2 ÷ 45 = 0,0444), puis somme sur
+  le magasin. Représente une fraction de palette, pas un nombre entier.
 - Comparaison à la **capacité totale** du magasin (`CAPACITE_PALETTES`) pour
   obtenir : palettes occupées, palettes libres, **taux d'occupation (%)** et
   **taux d'espace disponible (%)**.

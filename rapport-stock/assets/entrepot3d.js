@@ -5,10 +5,13 @@
   'use strict';
 
   var D = window.WAREHOUSE_DATA;
-  if (!D || typeof THREE === 'undefined') { return; }
-
   var container = document.getElementById('scene');
   if (!container) { return; }
+  // Messages d'échec (Three.js absent / données manquantes) gérés par le
+  // script de diagnostic inline dans entrepot3d.php.
+  if (!D || D.error || typeof THREE === 'undefined') { return; }
+
+  try {
 
   // --- Disposition ---
   var LEVELS = D.levels || 3;
@@ -248,4 +251,10 @@
     camera.updateProjectionMatrix();
     renderer.setSize(W, H);
   });
+
+  } catch (err) {
+    if (window.console) { console.error('Entrepôt 3D — erreur de rendu :', err); }
+    container.innerHTML = '<div class="scene-error">⚠ <strong>Erreur lors du rendu 3D.</strong><br>'
+      + ((err && err.message) ? err.message : err) + '<br>Détails dans la console (F12).</div>';
+  }
 })();

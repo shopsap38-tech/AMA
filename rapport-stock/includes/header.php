@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($pageTitle) ?></title>
-    <link rel="stylesheet" href="/rapport-stock/assets/style.css">
+    <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
     <header class="topbar no-print">
-        <h1><a href="/rapport-stock/index.php">Suivi de stock</a></h1>
+        <h1><a href="index.php">Suivi de stock</a></h1>
         <nav>
-            <a href="/rapport-stock/entrepot3d.php">Entrepôt 3D</a>
-            <a href="/rapport-stock/occupation.php">Occupation</a>
-            <a href="/rapport-stock/index.php">Rapport</a>
+            <a href="entrepot3d.php">Entrepôt 3D</a>
+            <a href="occupation.php">Occupation</a>
+            <a href="index.php">Rapport</a>
             <a href="#" onclick="window.print(); return false;">Imprimer</a>
         </nav>
     </header>

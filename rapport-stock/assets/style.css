@@ -565,3 +565,18 @@ body {
     color: #616e7c;
     font-weight: 600;
 }
+
+.scene-error {
+    padding: 1.5rem;
+    margin: 1.5rem;
+    background: #fff5f5;
+    border: 1px solid #ffc9c9;
+    border-radius: 6px;
+    color: #c92a2a;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+.scene-error code {
+    background: #ffe3e3;
+    color: #c92a2a;
+}
