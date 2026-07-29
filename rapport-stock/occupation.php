@@ -47,13 +47,26 @@ function getStatusText(float $taux): string {
 }
 
 $magasin = MAGASIN_FILTRE !== '' ? MAGASIN_FILTRE : 'Tous les magasins';
-$couleur = couleur_taux($occ['taux_occupation']);
-$statusType = getStatusType($occ['taux_occupation']);
-$statusLabel = getStatusLabel($occ['taux_occupation']);
 
-// Données pour le graphique donut
-$pourcentageOccupe = min($occ['taux_occupation'], 100);
-$pourcentageLibre = max(0, 100 - $pourcentageOccupe);
+// Valeurs par défaut : on ne calcule les statuts/graphiques QUE si les données
+// ont bien été chargées. En cas d'erreur de connexion, $occ est null et l'on
+// affiche le message d'erreur SAP plus bas (au lieu d'un plantage fatal).
+$couleur = '#107e3e';
+$statusType = 'Success';
+$statusLabel = 'Normal';
+$pourcentageOccupe = 0;
+$pourcentageLibre = 100;
+
+if (!$erreur && $occ !== null) {
+    $taux = (float) $occ['taux_occupation'];
+    $couleur = couleur_taux($taux);
+    $statusType = getStatusType($taux);
+    $statusLabel = getStatusLabel($taux);
+
+    // Données pour le graphique donut
+    $pourcentageOccupe = min($taux, 100);
+    $pourcentageLibre = max(0, 100 - $pourcentageOccupe);
+}
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -850,7 +863,7 @@ body {
                 <?php endif; ?>
             </div>
             <div class="subtitle">
-                <?= htmlspecialchars($magasin) ?> • <?= getStatusText($occ['taux_occupation']) ?>
+                <?= htmlspecialchars($magasin) ?><?php if (!$erreur && $occ !== null): ?> • <?= getStatusText((float) $occ['taux_occupation']) ?><?php endif; ?>
             </div>
         </div>
         <?php if (!$erreur): ?>
