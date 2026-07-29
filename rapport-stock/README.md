@@ -172,7 +172,7 @@ La page `entrepot3d.php` affiche un **entrepôt 3D interactif** de niveau WMS
 (type SAP EWM / Manhattan), Three.js embarqué localement dans `assets/vendor/`
 (aucun accès Internet requis) :
 
-- **8 zones (A–H), 343 racks, 11 544 emplacements** générés automatiquement à
+- **8 zones (A–H), 343 racks, 10 600 emplacements** générés automatiquement à
   partir de la structure définie dans `includes/warehouse.php` (constante
   `ZONES`).
 - Les **palettes occupées** (issues de SQL Server) sont **réparties

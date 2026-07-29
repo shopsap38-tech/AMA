@@ -7,18 +7,18 @@
  */
 
 /**
- * Définition des zones : nombre de racks et capacité totale (en palettes).
- * Total : 343 racks, 11 544 emplacements palette.
+ * Définition des zones : nombre de racks et capacité (en palettes).
+ * Total : 343 racks, 10 600 emplacements palette.
  */
 const ZONES = [
-    'A' => ['racks' => 68, 'capacite' => 1352],
-    'B' => ['racks' => 38, 'capacite' => 1820],
-    'C' => ['racks' => 36, 'capacite' => 1716],
-    'D' => ['racks' => 4,  'capacite' => 48],
-    'E' => ['racks' => 33, 'capacite' => 844],
-    'F' => ['racks' => 44, 'capacite' => 1748],
-    'G' => ['racks' => 82, 'capacite' => 2648],
-    'H' => ['racks' => 38, 'capacite' => 1368],
+    'A' => ['racks' => 68, 'capacite' => 1241],
+    'B' => ['racks' => 38, 'capacite' => 1671],
+    'C' => ['racks' => 36, 'capacite' => 1576],
+    'D' => ['racks' => 4,  'capacite' => 44],
+    'E' => ['racks' => 33, 'capacite' => 775],
+    'F' => ['racks' => 44, 'capacite' => 1605],
+    'G' => ['racks' => 82, 'capacite' => 2432],
+    'H' => ['racks' => 38, 'capacite' => 1256],
 ];
 
 /** Répartit un entier en $n parts entières aussi égales que possible. */
