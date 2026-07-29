@@ -650,3 +650,36 @@ body {
 }
 .rack-panel-list dt { color: #6a6d70; font-size: 0.82rem; margin: 0; }
 .rack-panel-list dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* --- Entrepôt 3D : contrôles superposés + plein écran --- */
+#scene-wrap { position: relative; }
+.scene-controls {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    z-index: 6;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    background: rgba(255, 255, 255, 0.82);
+    padding: 0.35rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(3px);
+}
+.scene-controls .btn3d { font-size: 0.8rem; padding: 0.35rem 0.7rem; }
+
+/* Plein écran : la scène occupe tout l'écran. */
+#scene-wrap:fullscreen,
+#scene-wrap:-webkit-full-screen,
+#scene-wrap.is-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    background: #eaeef2;
+    border-radius: 0;
+}
+#scene-wrap:fullscreen #scene,
+#scene-wrap:-webkit-full-screen #scene,
+#scene-wrap.is-fullscreen #scene {
+    height: 100vh;
+}

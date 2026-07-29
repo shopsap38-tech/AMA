@@ -33,9 +33,6 @@ require_once __DIR__ . '/includes/header.php';
 <div class="report-head">
     <h2>Entrepôt 3D — <?= htmlspecialchars($magasin) ?></h2>
     <div class="no-print wms-toolbar">
-        <button id="btn-rotate" class="btn3d active" type="button">Rotation auto</button>
-        <button id="btn-codes" class="btn3d active" type="button">Codes racks</button>
-        <button id="btn-reset-view" class="btn3d" type="button">Recentrer</button>
         <a class="btn-export" href="entrepot3d.php" style="background:#2563eb;">Actualiser</a>
     </div>
 </div>
@@ -79,6 +76,12 @@ require_once __DIR__ . '/includes/header.php';
     <!-- Scène 3D + panneau d'info -->
     <div class="wms-stage">
         <div id="scene-wrap">
+            <div class="scene-controls no-print">
+                <button id="btn-rotate" class="btn3d active" type="button">⟳ Rotation</button>
+                <button id="btn-codes" class="btn3d active" type="button">Codes</button>
+                <button id="btn-reset-view" class="btn3d" type="button">Recentrer</button>
+                <button id="btn-fullscreen" class="btn3d" type="button">⛶ Plein écran</button>
+            </div>
             <div id="scene"></div>
             <div id="scene-tip"></div>
             <div class="scene-help no-print">Glisser = pivoter · molette = zoom · clic droit = déplacer · clic sur un rack = détail</div>

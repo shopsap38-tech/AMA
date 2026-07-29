@@ -369,12 +369,39 @@
       });
     }
 
+    // Plein écran.
+    var stage = document.getElementById('scene-wrap');
+    var btnFs = document.getElementById('btn-fullscreen');
+    function isFullscreen() { return document.fullscreenElement || document.webkitFullscreenElement; }
+    function toggleFullscreen() {
+      if (!stage) { return; }
+      if (!isFullscreen()) {
+        var req = stage.requestFullscreen || stage.webkitRequestFullscreen || stage.msRequestFullscreen;
+        if (req) { req.call(stage); }
+      } else {
+        var ex = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+        if (ex) { ex.call(document); }
+      }
+    }
+    if (btnFs) { btnFs.addEventListener('click', toggleFullscreen); }
+
     // Boucle + resize.
-    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-    animate();
-    window.addEventListener('resize', function () {
+    function onResize() {
       var W = container.clientWidth, H = container.clientHeight || 620;
       camera.aspect = W / H; camera.updateProjectionMatrix(); renderer.setSize(W, H);
-    });
+    }
+    function onFsChange() {
+      var fs = !!isFullscreen();
+      if (stage) { stage.classList.toggle('is-fullscreen', fs); }
+      if (btnFs) { btnFs.textContent = fs ? '⛶ Quitter' : '⛶ Plein écran'; btnFs.classList.toggle('active', fs); }
+      // le redimensionnement du conteneur prend effet au tick suivant.
+      setTimeout(onResize, 60);
+    }
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+
+    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    animate();
+    window.addEventListener('resize', onResize);
   }
 })();
