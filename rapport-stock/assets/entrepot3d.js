@@ -174,32 +174,95 @@
       scene.add(zl);
     });
 
-    // Coques (capacité) — InstancedMesh translucide, sert aussi de cible de clic.
+    // ---- Rayonnages réels : montants + lisses + palettes sur les niveaux ----
+    var LEVELS = 4;          // niveaux de rack
+    var PERLVL = 2;          // palettes de front par niveau
+    var CELLS  = LEVELS * PERLVL;
+    var cellW  = rackW / PERLVL;
+    var cellH  = maxH / LEVELS;
+
     var dummy = new THREE.Object3D();
-    var shellGeo = new THREE.BoxGeometry(rackW, maxH, rackD);
-    var shellMat = new THREE.MeshStandardMaterial({ color: 0xaeb8c2, transparent: true, opacity: 0.13, roughness: 1 });
+    var col   = new THREE.Color();
+
+    // Nombre de palettes visibles par rack (remplissage selon le taux).
+    var filled = new Array(N);
+    var totalPallets = 0;
+    for (var r = 0; r < N; r++) {
+      var f = Math.round(pos[r].rk.rate * CELLS);
+      f = Math.max(0, Math.min(CELLS, f));
+      filled[r] = f;
+      totalPallets += f;
+    }
+
+    // Coque invisible : cible de clic couvrant tout le rack.
+    var shellGeo = new THREE.BoxGeometry(rackW * 1.02, maxH, rackD * 1.02);
+    var shellMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false });
     var shells = new THREE.InstancedMesh(shellGeo, shellMat, N);
 
-    // Remplissage (occupation) — InstancedMesh coloré, hauteur = taux.
-    var fillGeo = new THREE.BoxGeometry(rackW * 0.8, 1, rackD * 0.8);
-    var fillMat = new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.05 });
-    var fills = new THREE.InstancedMesh(fillGeo, fillMat, N);
+    // Montants (4 par rack).
+    var upGeo = new THREE.BoxGeometry(0.08, maxH, 0.08);
+    var upMat = new THREE.MeshStandardMaterial({ color: 0x33455a, metalness: 0.45, roughness: 0.5 });
+    var uprights = new THREE.InstancedMesh(upGeo, upMat, N * 4);
 
-    var col = new THREE.Color();
-    for (var r = 0; r < N; r++) {
-      var pr = pos[r], rk = pr.rk;
-      dummy.position.set(pr.x, maxH / 2, pr.z); dummy.scale.set(1, 1, 1); dummy.updateMatrix();
-      shells.setMatrixAt(r, dummy.matrix);
+    // Lisses horizontales (avant/arrière) à chaque niveau + sommet.
+    var beamGeo = new THREE.BoxGeometry(1, 0.06, 0.06);
+    var beamMat = new THREE.MeshStandardMaterial({ color: 0xe8720c, metalness: 0.3, roughness: 0.5 });
+    var beams = new THREE.InstancedMesh(beamGeo, beamMat, N * (LEVELS + 1) * 2);
 
-      var fh = Math.max(0.08, rk.rate * maxH);
-      dummy.position.set(pr.x, fh / 2, pr.z); dummy.scale.set(1, fh, 1); dummy.updateMatrix();
-      fills.setMatrixAt(r, dummy.matrix);
-      fills.setColorAt(r, col.set(rackColor(rk.rate)));
+    // Palettes (colorées par occupation du rack).
+    var palGeo = new THREE.BoxGeometry(cellW * 0.82, cellH * 0.62, rackD * 0.72);
+    var palMat = new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.04 });
+    var pallets = new THREE.InstancedMesh(palGeo, palMat, Math.max(totalPallets, 1));
+
+    var ui = 0, bi = 0, pi = 0;
+    var cornX = [-rackW / 2, rackW / 2], cornZ = [-rackD / 2, rackD / 2];
+    for (var r2 = 0; r2 < N; r2++) {
+      var px = pos[r2].x, pz = pos[r2].z, rk2 = pos[r2].rk;
+      var rc = rackColor(rk2.rate);
+
+      // Coque (cible de clic).
+      dummy.position.set(px, maxH / 2, pz); dummy.scale.set(1, 1, 1); dummy.rotation.set(0, 0, 0); dummy.updateMatrix();
+      shells.setMatrixAt(r2, dummy.matrix);
+
+      // Montants aux 4 coins.
+      for (var a = 0; a < 2; a++) {
+        for (var b = 0; b < 2; b++) {
+          dummy.position.set(px + cornX[a], maxH / 2, pz + cornZ[b]);
+          dummy.scale.set(1, 1, 1); dummy.rotation.set(0, 0, 0); dummy.updateMatrix();
+          uprights.setMatrixAt(ui++, dummy.matrix);
+        }
+      }
+
+      // Lisses (avant/arrière) à chaque niveau.
+      for (var L = 0; L <= LEVELS; L++) {
+        var yb = L * cellH;
+        for (var s = 0; s < 2; s++) {
+          dummy.position.set(px, yb + 0.02, pz + cornZ[s]);
+          dummy.scale.set(rackW, 1, 1); dummy.rotation.set(0, 0, 0); dummy.updateMatrix();
+          beams.setMatrixAt(bi++, dummy.matrix);
+        }
+      }
+
+      // Palettes : remplissage bas -> haut, gauche -> droite.
+      var nf = filled[r2];
+      for (var i = 0; i < nf; i++) {
+        var lvl = Math.floor(i / PERLVL);
+        var c = i % PERLVL;
+        var lx = (c + 0.5) * cellW - rackW / 2;
+        var y = lvl * cellH + cellH * 0.42;
+        dummy.position.set(px + lx, y, pz);
+        dummy.scale.set(1, 1, 1); dummy.rotation.set(0, 0, 0); dummy.updateMatrix();
+        pallets.setMatrixAt(pi, dummy.matrix);
+        pallets.setColorAt(pi, col.set(rc));
+        pi++;
+      }
     }
     shells.instanceMatrix.needsUpdate = true;
-    fills.instanceMatrix.needsUpdate = true;
-    if (fills.instanceColor) { fills.instanceColor.needsUpdate = true; }
-    scene.add(shells); scene.add(fills);
+    uprights.instanceMatrix.needsUpdate = true;
+    beams.instanceMatrix.needsUpdate = true;
+    pallets.instanceMatrix.needsUpdate = true;
+    if (pallets.instanceColor) { pallets.instanceColor.needsUpdate = true; }
+    scene.add(shells); scene.add(uprights); scene.add(beams); scene.add(pallets);
 
     // Étiquettes de code (togglables).
     var codeSprites = [];
