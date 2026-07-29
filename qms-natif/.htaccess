@@ -1,0 +1,23 @@
+# En-têtes de sécurité HTTP
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Interdit l'accès direct aux fichiers sensibles
+<FilesMatch "\.(sql|md|dist)$">
+    Require all denied
+</FilesMatch>
+
+# Interdit l'exécution de PHP dans le dossier des téléversements
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^uploads/.*\.(php|phtml|phar)$ - [F]
+</IfModule>
+
+# Empêche le listing des répertoires
+Options -Indexes
+
+DirectoryIndex login.php index.php
