@@ -1,277 +1,317 @@
-/* Entrepôt 3D — rayonnages (racks) multi-niveaux façon entrepôt réel.
-   Three.js r128, rendu instancié. Lit window.WAREHOUSE_DATA. */
+/* Entrepôt 3D — visualisation WMS (type SAP EWM / Manhattan).
+   Racks générés par zone, colorés par occupation, clic pour le détail.
+   Three.js r128. Données via warehouse_api.php (repli : window.WAREHOUSE_FALLBACK). */
 (function () {
   'use strict';
 
-  var D = window.WAREHOUSE_DATA;
   var container = document.getElementById('scene');
   if (!container) { return; }
-  if (!D || D.error || typeof THREE === 'undefined') { return; }
+  var tip = document.getElementById('scene-tip');
 
-  try {
-
-  // ---- Paramètres de rayonnage ----
-  var LEVELS = 4;            // niveaux par rack
-  var WIDE   = 2;            // palettes de front par alvéole
-  var slotW = 1.05, slotH = 1.35, slotD = 1.15;
-  var bayGap = 0.18;         // jeu entre alvéoles (montant)
-  var aisleW = 2.4;          // largeur d'allée
-  var baysPerLine = 12;      // alvéoles par ligne de rack
-
-  var MAXBOX = 8000;
-  var occupiedCount = Math.min(D.slots.length, MAXBOX);
-  var perBayCol = LEVELS * WIDE;
-  var baysNeeded = Math.max(1, Math.ceil(occupiedCount / perBayCol));
-  var linesNeeded = Math.ceil(baysNeeded / baysPerLine);
-
-  var bayW = WIDE * slotW;
-  var pitchX = bayW + bayGap;
-  var blockDepth = 2 * slotD + aisleW;   // 2 lignes dos à dos + allée
-
-  function palletPos(i) {
-    var bay = Math.floor(i / perBayCol);
-    var inBay = i % perBayCol;
-    var level = Math.floor(inBay / WIDE);
-    var wpos = inBay % WIDE;
-    var line = Math.floor(bay / baysPerLine);
-    var bayInLine = bay % baysPerLine;
-    var block = Math.floor(line / 2);
-    var side = line % 2;
-    return {
-      x: bayInLine * pitchX + wpos * slotW + slotW / 2,
-      y: level * slotH + slotH / 2 + 0.05,
-      z: block * blockDepth + side * slotD + slotD / 2
-    };
+  function showError(msg) {
+    container.innerHTML = '<div class="scene-error">' + msg + '</div>';
   }
 
-  // Emprise
-  var extentX = baysPerLine * pitchX;
-  var blocks = Math.ceil(linesNeeded / 2);
-  var extentZ = blocks * blockDepth;
-  var cx = extentX / 2, cz = extentZ / 2, topY = LEVELS * slotH;
-
-  // ---- Scène ----
-  var scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xeef1f4);
-  var w = container.clientWidth, h = container.clientHeight || 600;
-  var camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100000);
-  var dist = Math.max(extentX, extentZ) * 0.85 + 16;
-  function defaultCam() { camera.position.set(cx - dist * 0.35, topY + dist * 0.6, cz + dist); }
-  defaultCam();
-
-  var renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(w, h);
-  container.appendChild(renderer.domElement);
-
-  var controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.target.set(cx, topY / 2, cz);
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.6;
-  controls.update();
-
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 1.05));
-  var dl = new THREE.DirectionalLight(0xffffff, 0.5);
-  dl.position.set(cx + 30, 80, cz + 40);
-  scene.add(dl);
-
-  // Sol
-  var floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(extentX + 20, extentZ + 20),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 })
-  );
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.set(cx, 0, cz);
-  scene.add(floor);
-
-  // ---- Structure des racks (montants + lisses) en InstancedMesh ----
-  var postMat = new THREE.MeshStandardMaterial({ color: 0x1f3a5f, roughness: 0.5, metalness: 0.4 });
-  var beamMat = new THREE.MeshStandardMaterial({ color: 0xff7a1a, roughness: 0.5, metalness: 0.3 });
-
-  var posts = [];   // {x,z}
-  var beams = [];   // {x,y,z,len}
-  for (var line = 0; line < linesNeeded; line++) {
-    var block = Math.floor(line / 2), side = line % 2;
-    var zc = block * blockDepth + side * slotD + slotD / 2;
-    var baysThis = Math.min(baysPerLine, baysNeeded - line * baysPerLine);
-    if (baysThis <= 0) { break; }
-    // montants verticaux aux bords d'alvéole (avant/arrière)
-    for (var b = 0; b <= baysThis; b++) {
-      var xp = b * pitchX - bayGap / 2;
-      posts.push({ x: xp, z: zc - slotD / 2 });
-      posts.push({ x: xp, z: zc + slotD / 2 });
+  function boot(data) {
+    if (!data || data.error) {
+      showError('⚠ <strong>Données indisponibles.</strong>' + (data && data.error ? '<br>' + data.error : ''));
+      return;
     }
-    // lisses horizontales par niveau (avant/arrière)
-    var lineLen = baysThis * pitchX;
-    for (var lv = 0; lv <= LEVELS; lv++) {
-      var yb = lv * slotH;
-      beams.push({ x: lineLen / 2 - bayGap / 2, y: yb, z: zc - slotD / 2, len: lineLen });
-      beams.push({ x: lineLen / 2 - bayGap / 2, y: yb, z: zc + slotD / 2, len: lineLen });
+    if (typeof THREE === 'undefined') { return; }
+    try { build(data); }
+    catch (err) {
+      if (window.console) { console.error('Entrepôt 3D :', err); }
+      showError('⚠ <strong>Erreur de rendu 3D.</strong><br>' + ((err && err.message) ? err.message : err));
     }
   }
 
-  var dummy = new THREE.Object3D();
-  var postGeo = new THREE.BoxGeometry(0.08, topY, 0.08);
-  var postMesh = new THREE.InstancedMesh(postGeo, postMat, posts.length);
-  for (var pi = 0; pi < posts.length; pi++) {
-    dummy.position.set(posts[pi].x, topY / 2, posts[pi].z);
-    dummy.scale.set(1, 1, 1); dummy.rotation.set(0, 0, 0); dummy.updateMatrix();
-    postMesh.setMatrixAt(pi, dummy.matrix);
+  // Chargement via l'API PHP, avec repli sur les données intégrées.
+  if (window.fetch) {
+    fetch('warehouse_api.php', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) { throw new Error('HTTP ' + r.status); } return r.json(); })
+      .then(function (d) { updateDashboard(d); boot(d); })
+      .catch(function () { boot(window.WAREHOUSE_FALLBACK); });
+  } else {
+    boot(window.WAREHOUSE_FALLBACK);
   }
-  postMesh.instanceMatrix.needsUpdate = true;
-  scene.add(postMesh);
 
-  var beamGeo = new THREE.BoxGeometry(1, 0.06, 0.06);
-  var beamMesh = new THREE.InstancedMesh(beamGeo, beamMat, beams.length);
-  for (var bi = 0; bi < beams.length; bi++) {
-    dummy.position.set(beams[bi].x, beams[bi].y, beams[bi].z);
-    dummy.scale.set(beams[bi].len, 1, 1); dummy.rotation.set(0, 0, 0); dummy.updateMatrix();
-    beamMesh.setMatrixAt(bi, dummy.matrix);
+  function fmt(n) { return (Math.round(n)).toLocaleString('fr-FR'); }
+
+  function updateDashboard(d) {
+    if (!d || d.error) { return; }
+    var set = function (id, v) { var e = document.getElementById(id); if (e) { e.textContent = v; } };
+    set('kpi-cap', fmt(d.capacite_totale));
+    set('kpi-occ', fmt(d.occupees));
+    set('kpi-libre', fmt(d.libres));
+    set('kpi-taux', (d.taux).toString().replace('.', ',') + '%');
   }
-  beamMesh.instanceMatrix.needsUpdate = true;
-  scene.add(beamMesh);
 
-  // ---- Palettes (InstancedMesh coloré) ----
-  var boxGeo = new THREE.BoxGeometry(slotW * 0.86, slotH * 0.78, slotD * 0.82);
-  var occMat = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05 });
-  var occMesh = new THREE.InstancedMesh(boxGeo, occMat, Math.max(occupiedCount, 1));
-  occMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-
-  var catColors = (D.categories || []).map(function (c) { return new THREE.Color(c.color); });
-  var alertColors = (D.alertes || []).map(function (a) { return new THREE.Color(a.color); });
-  var catOf = D.slots, alertOf = D.slotsAlert || [];
-
-  function placeBox(k, visible) {
-    var p = palletPos(k);
-    dummy.position.set(p.x, visible ? p.y : -1000, p.z);
-    dummy.scale.set(1, visible ? 1 : 0.0001, 1);
-    dummy.rotation.set(0, 0, 0);
-    dummy.updateMatrix();
-    occMesh.setMatrixAt(k, dummy.matrix);
+  function rackColor(rate) {
+    if (rate < 0.5) { return 0x2f9e44; } // vert
+    if (rate < 0.8) { return 0xe8720c; } // orange
+    return 0xc92a2a;                     // rouge
   }
-  for (var k = 0; k < occupiedCount; k++) {
-    placeBox(k, true);
-    occMesh.setColorAt(k, catColors[catOf[k]] || new THREE.Color(0x888888));
-  }
-  occMesh.instanceMatrix.needsUpdate = true;
-  if (occMesh.instanceColor) { occMesh.instanceColor.needsUpdate = true; }
-  scene.add(occMesh);
 
-  // ---- Numéros d'allée (sprites sur le sol) ----
-  function labelSprite(text) {
-    var c = document.createElement('canvas'); c.width = 96; c.height = 64;
-    var ctx = c.getContext('2d');
-    ctx.fillStyle = '#334'; ctx.font = 'bold 46px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(text, 48, 34);
-    var tex = new THREE.CanvasTexture(c);
-    var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
-    sp.scale.set(1.3, 0.85, 1);
+  function textSprite(text, opts) {
+    opts = opts || {};
+    var fs = opts.fontSize || 44;
+    var pad = opts.pad || 8;
+    var cnv = document.createElement('canvas');
+    var ctx = cnv.getContext('2d');
+    ctx.font = 'bold ' + fs + 'px Arial';
+    var w = Math.ceil(ctx.measureText(text).width) + pad * 2;
+    var h = fs + pad * 2;
+    cnv.width = w; cnv.height = h;
+    ctx.font = 'bold ' + fs + 'px Arial';
+    if (opts.bg) { ctx.fillStyle = opts.bg; roundRect(ctx, 0, 0, w, h, 8); ctx.fill(); }
+    ctx.fillStyle = opts.color || '#1f2933';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, w / 2, h / 2);
+    var tex = new THREE.CanvasTexture(cnv);
+    tex.minFilter = THREE.LinearFilter;
+    var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: opts.depthTest !== false }));
+    var scale = (opts.scale || 0.01);
+    sp.scale.set(w * scale, h * scale, 1);
     return sp;
   }
-  var nBays = Math.min(baysPerLine, baysNeeded);
-  for (var bn = 0; bn < nBays; bn++) {
-    var s = labelSprite(('0' + (bn + 1)).slice(-2));
-    s.position.set(bn * pitchX + bayW / 2, 0.15, -1.1);
-    scene.add(s);
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
   }
 
-  controls.target.set(cx, topY / 2, cz);
-  controls.update();
+  function build(data) {
+    var racks = data.racks || [];
+    var N = racks.length;
 
-  // ---- Couleur : catégorie / alerte ----
-  function setColorMode(mode) {
-    var colors = (mode === 'alert') ? alertColors : catColors;
-    var keyOf = (mode === 'alert') ? alertOf : catOf;
-    for (var j = 0; j < occupiedCount; j++) {
-      occMesh.setColorAt(j, colors[keyOf[j]] || new THREE.Color(0x888888));
+    // Regroupement par zone (ordre d'apparition).
+    var order = [], byZone = {};
+    racks.forEach(function (rk) {
+      if (!byZone[rk.zone]) { byZone[rk.zone] = []; order.push(rk.zone); }
+      byZone[rk.zone].push(rk);
+    });
+
+    // Dimensions.
+    var rackW = 1.6, rackD = 1.1, maxH = 4.4;
+    var pitchX = rackW + 0.5, pitchZ = rackD + 0.9;
+    var zoneGap = 3.6, rowGap = 4.8, maxRowWidth = 92;
+
+    // Placement des blocs-zones.
+    var place = {}, cursorX = 0, cursorZ = 0, rowDepth = 0, maxX = 0;
+    order.forEach(function (z) {
+      var n = byZone[z].length;
+      var cols = Math.max(1, Math.ceil(Math.sqrt(n * 1.7)));
+      var rows = Math.ceil(n / cols);
+      var w = cols * pitchX, d = rows * pitchZ;
+      if (cursorX > 0 && cursorX + w > maxRowWidth) { cursorX = 0; cursorZ += rowDepth + rowGap; rowDepth = 0; }
+      place[z] = { x0: cursorX, z0: cursorZ, cols: cols, rows: rows, w: w, d: d };
+      cursorX += w + zoneGap; rowDepth = Math.max(rowDepth, d); maxX = Math.max(maxX, cursorX);
+    });
+    var totalW = maxX, totalD = cursorZ + rowDepth;
+    var cx = totalW / 2, cz = totalD / 2;
+
+    // Scène.
+    var scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xeaeef2);
+    scene.fog = new THREE.Fog(0xeaeef2, Math.max(totalW, totalD) * 1.2, Math.max(totalW, totalD) * 3);
+
+    var w0 = container.clientWidth, h0 = container.clientHeight || 620;
+    var camera = new THREE.PerspectiveCamera(48, w0 / h0, 0.1, 100000);
+    var dist = Math.max(totalW, totalD) * 0.62 + 16;
+    function defaultCam() { camera.position.set(cx - dist * 0.35, maxH + dist * 0.52, cz + dist * 0.95); }
+    defaultCam();
+
+    var renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(w0, h0);
+    container.innerHTML = '';
+    container.appendChild(renderer.domElement);
+
+    var controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.08;
+    controls.maxPolarAngle = Math.PI * 0.49;
+    controls.target.set(cx, maxH / 2, cz);
+    controls.autoRotate = true; controls.autoRotateSpeed = 0.45;
+    controls.update();
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa7b4, 1.0));
+    var dl = new THREE.DirectionalLight(0xffffff, 0.55);
+    dl.position.set(cx + 40, 90, cz + 50);
+    scene.add(dl);
+
+    // Sol + grille.
+    var floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(totalW + 30, totalD + 30),
+      new THREE.MeshStandardMaterial({ color: 0xf4f6f8, roughness: 1 })
+    );
+    floor.rotation.x = -Math.PI / 2; floor.position.set(cx, 0, cz);
+    scene.add(floor);
+    var grid = new THREE.GridHelper(Math.max(totalW, totalD) + 30, Math.round((Math.max(totalW, totalD) + 30) / 2), 0xccd4dc, 0xe4e9ee);
+    grid.position.set(cx, 0.02, cz);
+    scene.add(grid);
+
+    // Positions des racks.
+    var pos = new Array(N);
+    var idx = 0;
+    order.forEach(function (z) {
+      var p = place[z], list = byZone[z];
+      list.forEach(function (rk, i) {
+        var col = i % p.cols, row = Math.floor(i / p.cols);
+        pos[idx] = {
+          x: p.x0 + col * pitchX + rackW / 2,
+          z: p.z0 + row * pitchZ + rackD / 2,
+          rk: rk
+        };
+        idx++;
+      });
+      // Étiquette de zone.
+      var zl = textSprite('ZONE ' + z, { fontSize: 60, color: '#0a6ed1', bg: 'rgba(255,255,255,0.85)', scale: 0.02, depthTest: false });
+      zl.position.set(p.x0 + p.w / 2 - zoneGap / 2, maxH + 2.2, p.z0 - 0.6);
+      scene.add(zl);
+    });
+
+    // Coques (capacité) — InstancedMesh translucide, sert aussi de cible de clic.
+    var dummy = new THREE.Object3D();
+    var shellGeo = new THREE.BoxGeometry(rackW, maxH, rackD);
+    var shellMat = new THREE.MeshStandardMaterial({ color: 0xaeb8c2, transparent: true, opacity: 0.13, roughness: 1 });
+    var shells = new THREE.InstancedMesh(shellGeo, shellMat, N);
+
+    // Remplissage (occupation) — InstancedMesh coloré, hauteur = taux.
+    var fillGeo = new THREE.BoxGeometry(rackW * 0.8, 1, rackD * 0.8);
+    var fillMat = new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.05 });
+    var fills = new THREE.InstancedMesh(fillGeo, fillMat, N);
+
+    var col = new THREE.Color();
+    for (var r = 0; r < N; r++) {
+      var pr = pos[r], rk = pr.rk;
+      dummy.position.set(pr.x, maxH / 2, pr.z); dummy.scale.set(1, 1, 1); dummy.updateMatrix();
+      shells.setMatrixAt(r, dummy.matrix);
+
+      var fh = Math.max(0.08, rk.rate * maxH);
+      dummy.position.set(pr.x, fh / 2, pr.z); dummy.scale.set(1, fh, 1); dummy.updateMatrix();
+      fills.setMatrixAt(r, dummy.matrix);
+      fills.setColorAt(r, col.set(rackColor(rk.rate)));
     }
-    if (occMesh.instanceColor) { occMesh.instanceColor.needsUpdate = true; }
-  }
-  var mCat = document.getElementById('mode-cat');
-  var mAlert = document.getElementById('mode-alert');
-  var chipsCat = document.getElementById('chips-cat');
-  var legAlert = document.getElementById('legend-alert');
-  if (mCat && mAlert) {
-    mCat.addEventListener('click', function () {
-      setColorMode('cat'); mCat.classList.add('active'); mAlert.classList.remove('active');
-      if (chipsCat) { chipsCat.style.display = ''; }
-      if (legAlert) { legAlert.style.display = 'none'; }
-    });
-    mAlert.addEventListener('click', function () {
-      setColorMode('alert'); mAlert.classList.add('active'); mCat.classList.remove('active');
-      if (chipsCat) { chipsCat.style.display = 'none'; }
-      if (legAlert) { legAlert.style.display = 'flex'; }
-    });
-  }
+    shells.instanceMatrix.needsUpdate = true;
+    fills.instanceMatrix.needsUpdate = true;
+    if (fills.instanceColor) { fills.instanceColor.needsUpdate = true; }
+    scene.add(shells); scene.add(fills);
 
-  // ---- Filtre par catégorie ----
-  function applyFilter(sel) {
-    for (var j = 0; j < occupiedCount; j++) {
-      placeBox(j, (sel === -1) || (catOf[j] === sel));
+    // Étiquettes de code (togglables).
+    var codeSprites = [];
+    for (var c = 0; c < N; c++) {
+      var s = textSprite(pos[c].rk.code, { fontSize: 30, color: '#32363a', bg: 'rgba(255,255,255,0.75)', scale: 0.009 });
+      s.position.set(pos[c].x, maxH + 0.55, pos[c].z);
+      scene.add(s); codeSprites.push(s);
     }
-    occMesh.instanceMatrix.needsUpdate = true;
-  }
-  var chips = document.querySelectorAll('[data-cat]');
-  Array.prototype.forEach.call(chips, function (chip) {
-    chip.addEventListener('click', function () {
-      var sel = parseInt(chip.getAttribute('data-cat'), 10);
-      Array.prototype.forEach.call(chips, function (c) { c.classList.remove('active'); });
-      chip.classList.add('active');
-      applyFilter(sel);
+
+    // Surbrillance de sélection.
+    var outline = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(rackW * 1.04, maxH * 1.02, rackD * 1.04)),
+      new THREE.LineBasicMaterial({ color: 0x0a6ed1 })
+    );
+    outline.visible = false;
+    scene.add(outline);
+
+    // Panneau d'info.
+    var elEmpty = document.getElementById('rack-empty');
+    var elBody = document.getElementById('rack-body');
+    function selectRack(r) {
+      var pr = pos[r], rk = pr.rk;
+      outline.position.set(pr.x, maxH / 2, pr.z); outline.visible = true;
+      if (elEmpty) { elEmpty.style.display = 'none'; }
+      if (elBody) { elBody.style.display = 'block'; }
+      var pct = Math.round(rk.rate * 100);
+      var color = '#' + rackColor(rk.rate).toString(16).padStart(6, '0');
+      var set = function (id, v) { var e = document.getElementById(id); if (e) { e.textContent = v; } };
+      set('rp-code', rk.code);
+      set('rp-zone', 'Zone ' + rk.zone);
+      set('rp-cap', fmt(rk.capacity) + ' palettes');
+      set('rp-occ', fmt(rk.occupied) + ' palettes');
+      set('rp-free', fmt(rk.free) + ' places');
+      set('rp-rate', pct + ' %');
+      var g = document.getElementById('rp-gauge');
+      if (g) { g.style.width = Math.min(pct, 100) + '%'; g.style.background = color; }
+      var rateEl = document.getElementById('rp-rate');
+      if (rateEl) { rateEl.style.color = color; }
+      var codeEl = document.getElementById('rp-code');
+      if (codeEl) { codeEl.style.borderColor = color; }
+    }
+
+    // Interactions.
+    var ray = new THREE.Raycaster();
+    var mouse = new THREE.Vector2();
+    var down = null;
+    function pick(e) {
+      var rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      ray.setFromCamera(mouse, camera);
+      var hit = ray.intersectObject(shells);
+      return (hit.length && hit[0].instanceId != null) ? hit[0].instanceId : -1;
+    }
+    // Événements POINTER (les événements souris de compatibilité sont supprimés
+    // par OrbitControls qui appelle preventDefault sur pointerdown).
+    renderer.domElement.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY }; });
+    renderer.domElement.addEventListener('pointerup', function (e) {
+      if (!down) { return; }
+      var moved = Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y);
+      down = null;
+      if (moved > 6) { return; } // c'était un drag, pas un clic
+      var r = pick(e);
+      if (r >= 0) { selectRack(r); }
     });
-  });
-
-  // ---- Contrôles ----
-  var btnRotate = document.getElementById('btn-rotate');
-  if (btnRotate) {
-    btnRotate.addEventListener('click', function () {
-      controls.autoRotate = !controls.autoRotate;
-      btnRotate.classList.toggle('active', controls.autoRotate);
+    renderer.domElement.addEventListener('pointermove', function (e) {
+      if (!tip) { return; }
+      var r = pick(e);
+      if (r >= 0) {
+        var rk = pos[r].rk;
+        tip.style.display = 'block';
+        var rect = renderer.domElement.getBoundingClientRect();
+        tip.style.left = (e.clientX - rect.left + 12) + 'px';
+        tip.style.top = (e.clientY - rect.top + 12) + 'px';
+        tip.textContent = rk.code + ' · ' + Math.round(rk.rate * 100) + '% (' + rk.occupied + '/' + rk.capacity + ')';
+        renderer.domElement.style.cursor = 'pointer';
+      } else {
+        tip.style.display = 'none';
+        renderer.domElement.style.cursor = 'grab';
+      }
     });
-  }
-  var btnReset = document.getElementById('btn-reset-view');
-  if (btnReset) {
-    btnReset.addEventListener('click', function () {
-      defaultCam(); controls.target.set(cx, topY / 2, cz); controls.update();
+
+    // Boutons.
+    var btnRotate = document.getElementById('btn-rotate');
+    if (btnRotate) {
+      btnRotate.addEventListener('click', function () {
+        controls.autoRotate = !controls.autoRotate;
+        btnRotate.classList.toggle('active', controls.autoRotate);
+      });
+    }
+    var btnReset = document.getElementById('btn-reset-view');
+    if (btnReset) {
+      btnReset.addEventListener('click', function () {
+        defaultCam(); controls.target.set(cx, maxH / 2, cz); controls.update();
+      });
+    }
+    var btnCodes = document.getElementById('btn-codes');
+    var codesVisible = true;
+    if (btnCodes) {
+      btnCodes.addEventListener('click', function () {
+        codesVisible = !codesVisible;
+        for (var i = 0; i < codeSprites.length; i++) { codeSprites[i].visible = codesVisible; }
+        btnCodes.classList.toggle('active', codesVisible);
+      });
+    }
+
+    // Boucle + resize.
+    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    animate();
+    window.addEventListener('resize', function () {
+      var W = container.clientWidth, H = container.clientHeight || 620;
+      camera.aspect = W / H; camera.updateProjectionMatrix(); renderer.setSize(W, H);
     });
-  }
-
-  // ---- Survol ----
-  var tip = document.getElementById('scene-tip');
-  var ray = new THREE.Raycaster();
-  var mouse = new THREE.Vector2();
-  renderer.domElement.addEventListener('mousemove', function (e) {
-    if (!tip) { return; }
-    var rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    ray.setFromCamera(mouse, camera);
-    var hit = ray.intersectObject(occMesh);
-    if (hit.length && hit[0].instanceId != null) {
-      var cat = D.categories[catOf[hit[0].instanceId]];
-      tip.style.display = 'block';
-      tip.style.left = (e.clientX - rect.left + 12) + 'px';
-      tip.style.top = (e.clientY - rect.top + 12) + 'px';
-      tip.textContent = cat ? (cat.name + ' — ' + cat.count + ' pal.') : 'palette';
-    } else { tip.style.display = 'none'; }
-  });
-  renderer.domElement.addEventListener('mouseleave', function () {
-    if (tip) { tip.style.display = 'none'; }
-  });
-
-  // ---- Rendu ----
-  function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-  animate();
-  window.addEventListener('resize', function () {
-    var W = container.clientWidth, H = container.clientHeight || 600;
-    camera.aspect = W / H; camera.updateProjectionMatrix(); renderer.setSize(W, H);
-  });
-
-  } catch (err) {
-    if (window.console) { console.error('Entrepôt 3D — erreur de rendu :', err); }
-    container.innerHTML = '<div class="scene-error">⚠ <strong>Erreur lors du rendu 3D.</strong><br>'
-      + ((err && err.message) ? err.message : err) + '<br>Détails dans la console (F12).</div>';
   }
 })();

@@ -1,115 +1,28 @@
 <?php
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/report.php';
+require_once __DIR__ . '/includes/warehouse.php';
 
-$pageTitle = 'Entrepôt 3D';
-$refresh   = 0; // pas de rafraîchissement auto par défaut (vue 3D interactive)
+$pageTitle = 'Entrepôt 3D - WMS';
 
 $erreur = null;
 $data   = null;
-$occ    = null;
 try {
     $lignes = charger_toutes_lignes();
     $occ    = calculer_occupation($lignes, (float) CAPACITE_PALETTES);
-
-    // Palette de couleurs par catégorie.
-    $palette = ['#4C78A8', '#F58518', '#54A24B', '#E45756', '#72B7B2',
-                '#EECA3B', '#B279A2', '#FF9DA6', '#9D755D', '#BAB0AC'];
-
-    // Niveau d'alerte stock (feu tricolore) à partir du prévisionnel U_u_forcast :
-    //   0 vert   : stock >= prévision (couvre la demande)
-    //   1 jaune  : 50 % <= stock < prévision (à surveiller)
-    //   2 rouge  : stock < 50 % de la prévision (risque de rupture)
-    //   3 gris   : pas de prévision renseignée
-    $alertes = [
-        ['name' => 'OK (≥ prévision)',        'color' => '#2b8a3e'],
-        ['name' => 'À surveiller',            'color' => '#f0a500'],
-        ['name' => 'Risque de rupture',       'color' => '#c92a2a'],
-        ['name' => 'Sans prévision',          'color' => '#adb5bd'],
-    ];
-    $niveau_alerte = static function (float $dispo, float $forecast): int {
-        if ($forecast <= 0)            { return 3; }
-        if ($dispo < 0.5 * $forecast)  { return 2; }
-        if ($dispo < $forecast)        { return 1; }
-        return 0;
-    };
-
-    // Somme des FRACTIONS de palette par catégorie (métrique réelle, sans arrondi).
-    $catFrac = [];
-    foreach ($lignes as $l) {
-        $dispo = (float) ($l['Disponible'] ?? 0);
-        $par   = (float) ($l['U_Qte_Palette'] ?? 0);
-        if ($par <= 0 || $dispo <= 0) {
-            continue;
-        }
-        $cat = trim((string) ($l['U_u_cat'] ?? '')) ?: '(sans catégorie)';
-        $catFrac[$cat] = ($catFrac[$cat] ?? 0) + $dispo / $par;
-    }
-    arsort($catFrac);
-
-    $categories = [];
-    $catIndex   = [];
-    $idx = 0;
-    foreach ($catFrac as $name => $frac) {
-        $categories[] = ['name' => $name, 'color' => $palette[$idx % count($palette)], 'count' => round($frac, 2)];
-        $catIndex[$name] = $idx;
-        $idx++;
-    }
-
-    // Boîtes 3D : nombre d'emplacements physiques par article = ARRONDI (pas ceil)
-    // de la fraction. Sert uniquement à la visualisation (une boîte ≈ 1 palette).
-    // Les indicateurs KPI, eux, restent fractionnaires.
-    $pallets     = [];
-    $alerteCount = [0, 0, 0, 0];
-    foreach ($lignes as $l) {
-        $dispo = (float) ($l['Disponible'] ?? 0);
-        $par   = (float) ($l['U_Qte_Palette'] ?? 0);
-        if ($par <= 0 || $dispo <= 0) {
-            continue;
-        }
-        $n = (int) round($dispo / $par);
-        if ($n <= 0) {
-            continue; // fraction < 0,5 => aucune boîte visible
-        }
-        $cat = trim((string) ($l['U_u_cat'] ?? '')) ?: '(sans catégorie)';
-        $ci  = $catIndex[$cat];
-        $niv = $niveau_alerte($dispo, (float) ($l['U_u_forcast'] ?? 0));
-        for ($k = 0; $k < $n; $k++) {
-            $pallets[] = ['cat' => $ci, 'alerte' => $niv];
-            $alerteCount[$niv]++;
-        }
-    }
-    usort($pallets, static fn($a, $b) => $a['cat'] <=> $b['cat']);
-    foreach ($alertes as $i => &$a) { $a['count'] = $alerteCount[$i]; }
-    unset($a);
-
-    // Emplacements occupés (plafonnés ; rendu instancié => grande capacité OK).
-    $capRender    = 30000;
-    $totalBoxes   = count($pallets);
-    $pallets      = array_slice($pallets, 0, $capRender);
-    $slots        = array_map(static fn($p) => $p['cat'], $pallets);
-    $slotsAlert   = array_map(static fn($p) => $p['alerte'], $pallets);
-
-    $data = [
-        'capacity'   => (int) round($occ['capacite']),
-        'levels'     => 3,
-        'slots'      => $slots,
-        'slotsAlert' => $slotsAlert,
-        'categories' => $categories,
-        'alertes'    => $alertes,
-        'kpis'       => [
-            'occupees'  => round($occ['occupees'], 2),
-            'capacity'  => (int) round($occ['capacite']),
-            'rendered'  => count($slots),
-            'total'     => $totalBoxes,
-        ],
-    ];
+    $data   = construire_entrepot((float) $occ['occupees']);
+    $data['magasins'] = magasins_autorises();
 } catch (Throwable $e) {
     $erreur = $e->getMessage();
 }
 
 function fmt($v, int $d = 0): string { return number_format((float) $v, $d, ',', ' '); }
-function coul_taux(float $t): string { return $t >= 90 ? '#c92a2a' : ($t >= 70 ? '#e8590c' : '#2b8a3e'); }
+function coul_zone(float $taux): string
+{
+    if ($taux >= 80) { return '#c92a2a'; }
+    if ($taux >= 50) { return '#e8720c'; }
+    return '#2f9e44';
+}
 
 $magAutorises = magasins_autorises();
 $magasin = $magAutorises ? implode(', ', $magAutorises) : 'Tous magasins';
@@ -119,8 +32,9 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="report-head">
     <h2>Entrepôt 3D — <?= htmlspecialchars($magasin) ?></h2>
-    <div class="no-print" style="display:flex;gap:0.5rem;align-items:center;">
+    <div class="no-print wms-toolbar">
         <button id="btn-rotate" class="btn3d active" type="button">Rotation auto</button>
+        <button id="btn-codes" class="btn3d active" type="button">Codes racks</button>
         <button id="btn-reset-view" class="btn3d" type="button">Recentrer</button>
         <a class="btn-export" href="entrepot3d.php" style="background:#2563eb;">Actualiser</a>
     </div>
@@ -132,95 +46,80 @@ require_once __DIR__ . '/includes/header.php';
     <p class="hint">Vérifiez la connexion (voir <code>test.php</code>) et la source configurée.</p>
 <?php else: ?>
 
-    <?php $c = coul_taux($occ['taux_occupation']); ?>
-
-    <!-- KPI -->
+    <!-- KPI globaux -->
     <div class="kpis" style="margin-bottom:1rem;">
-        <div class="kpi"><span class="kpi-label">Capacité</span>
-            <span class="kpi-value"><?= fmt($occ['capacite']) ?></span><span class="kpi-unit">emplacements</span></div>
+        <div class="kpi"><span class="kpi-label">Capacité totale</span>
+            <span class="kpi-value" id="kpi-cap"><?= fmt($data['capacite_totale']) ?></span><span class="kpi-unit"><?= (int) $data['nb_racks'] ?> racks · 8 zones</span></div>
         <div class="kpi"><span class="kpi-label">Palettes occupées</span>
-            <span class="kpi-value" style="color:<?= $c ?>;"><?= fmt($occ['occupees'], 2) ?></span><span class="kpi-unit">palettes (fraction)</span></div>
-        <div class="kpi"><span class="kpi-label">Palettes libres</span>
-            <span class="kpi-value" style="color:#2b8a3e;"><?= fmt($occ['libres'], 2) ?></span><span class="kpi-unit">palettes</span></div>
+            <span class="kpi-value" id="kpi-occ" style="color:<?= coul_zone($data['taux']) ?>;"><?= fmt($data['occupees']) ?></span><span class="kpi-unit">palettes</span></div>
+        <div class="kpi"><span class="kpi-label">Palettes disponibles</span>
+            <span class="kpi-value" id="kpi-libre" style="color:#2f9e44;"><?= fmt($data['libres']) ?></span><span class="kpi-unit">emplacements libres</span></div>
         <div class="kpi"><span class="kpi-label">Taux d'occupation</span>
-            <span class="kpi-value" style="color:<?= $c ?>;"><?= fmt($occ['taux_occupation'], 1) ?>%</span><span class="kpi-unit">de la capacité</span></div>
-        <div class="kpi"><span class="kpi-label">Espace disponible</span>
-            <span class="kpi-value" style="color:#2b8a3e;"><?= fmt($occ['taux_disponible'], 1) ?>%</span><span class="kpi-unit">de la capacité</span></div>
+            <span class="kpi-value" id="kpi-taux" style="color:<?= coul_zone($data['taux']) ?>;"><?= fmt($data['taux'], 1) ?>%</span><span class="kpi-unit">global</span></div>
     </div>
 
-    <?php if ($occ['depassement']): ?>
-        <p class="alert alert-error">⚠ Palettes occupées (<?= fmt($occ['occupees'], 2) ?>)
-            supérieures à la capacité (<?= fmt($occ['capacite']) ?>). Ajustez
-            <code>CAPACITE_PALETTES</code> dans <code>config/database.php</code>.</p>
-    <?php endif; ?>
-
-    <!-- Choix du mode de couleur -->
-    <div class="colormode no-print">
-        <span class="colormode-label">Couleur :</span>
-        <button id="mode-cat" class="btn3d active" type="button">Par catégorie</button>
-        <button id="mode-alert" class="btn3d" type="button">Alerte stock (feu)</button>
-    </div>
-
-    <!-- Filtres catégorie -->
-    <div class="chips no-print" id="chips-cat">
-        <button class="chip active" data-cat="-1" type="button">Toutes</button>
-        <?php foreach ($data['categories'] as $i => $cat): ?>
-            <button class="chip" data-cat="<?= (int) $i ?>" type="button">
-                <span class="chip-dot" style="background:<?= htmlspecialchars($cat['color']) ?>;"></span>
-                <?= htmlspecialchars($cat['name']) ?> (<?= fmt($cat['count'], 2) ?>)
-            </button>
+    <!-- Taux par zone -->
+    <div class="zone-bars" id="zone-bars">
+        <?php foreach ($data['zones'] as $z): ?>
+            <div class="zone-bar" data-zone="<?= htmlspecialchars($z['zone']) ?>" title="Zone <?= htmlspecialchars($z['zone']) ?> — <?= fmt($z['occupied']) ?>/<?= fmt($z['capacity']) ?>">
+                <div class="zone-bar-head"><strong>Zone <?= htmlspecialchars($z['zone']) ?></strong><span><?= fmt($z['rate'], 1) ?>%</span></div>
+                <div class="zone-bar-track"><div class="zone-bar-fill" style="width:<?= min($z['rate'], 100) ?>%;background:<?= coul_zone($z['rate']) ?>;"></div></div>
+                <div class="zone-bar-sub"><?= fmt($z['occupied']) ?> / <?= fmt($z['capacity']) ?> · <?= (int) $z['racks'] ?> racks</div>
+            </div>
         <?php endforeach; ?>
     </div>
 
-    <!-- Légende feu tricolore (mode alerte) -->
-    <div class="chips no-print" id="legend-alert" style="display:none;">
-        <?php foreach ($data['alertes'] as $a): ?>
-            <span class="chip" style="cursor:default;">
-                <span class="chip-dot" style="background:<?= htmlspecialchars($a['color']) ?>;"></span>
-                <?= htmlspecialchars($a['name']) ?> (<?= fmt($a['count']) ?>)
-            </span>
-        <?php endforeach; ?>
+    <!-- Légende -->
+    <div class="wms-legend no-print">
+        <span><span class="dot" style="background:#2f9e44;"></span>Faible (&lt; 50 %)</span>
+        <span><span class="dot" style="background:#e8720c;"></span>Moyenne (50–80 %)</span>
+        <span><span class="dot" style="background:#c92a2a;"></span>Presque plein (&gt; 80 %)</span>
     </div>
 
-    <!-- Scène 3D -->
-    <div id="scene-wrap">
-        <div id="scene"></div>
-        <div id="scene-tip"></div>
-        <div class="scene-help no-print">Glisser = pivoter · molette = zoom · clic droit = déplacer</div>
+    <!-- Scène 3D + panneau d'info -->
+    <div class="wms-stage">
+        <div id="scene-wrap">
+            <div id="scene"></div>
+            <div id="scene-tip"></div>
+            <div class="scene-help no-print">Glisser = pivoter · molette = zoom · clic droit = déplacer · clic sur un rack = détail</div>
+        </div>
+        <aside class="rack-panel" id="rack-panel">
+            <div class="rack-panel-empty" id="rack-empty">
+                <div class="rack-panel-icon">🏗️</div>
+                Cliquez sur un rack pour afficher son détail.
+            </div>
+            <div class="rack-panel-body" id="rack-body" style="display:none;">
+                <div class="rack-panel-code" id="rp-code">A01</div>
+                <div class="rack-panel-zone" id="rp-zone">Zone A</div>
+                <div class="rack-panel-gauge">
+                    <div class="rack-panel-gauge-fill" id="rp-gauge"></div>
+                </div>
+                <div class="rack-panel-rate" id="rp-rate">0 %</div>
+                <dl class="rack-panel-list">
+                    <div><dt>Capacité</dt><dd id="rp-cap">—</dd></div>
+                    <div><dt>Palettes occupées</dt><dd id="rp-occ">—</dd></div>
+                    <div><dt>Places libres</dt><dd id="rp-free">—</dd></div>
+                </dl>
+            </div>
+        </aside>
     </div>
-
-    <?php if ($data['kpis']['total'] > $data['kpis']['rendered']): ?>
-        <p class="hint">Affichage limité à <?= fmt($data['kpis']['rendered']) ?> boîtes 3D sur
-            <?= fmt($data['kpis']['total']) ?> (performance). Les indicateurs restent exacts.</p>
-    <?php endif; ?>
 
     <?php
-    // Sérialisation robuste : substitue les octets non-UTF-8 (données SQL Server
-    // en Latin1 via ADO/ODBC) au lieu d'échouer silencieusement.
-    $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
-    if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) { $jsonFlags |= JSON_INVALID_UTF8_SUBSTITUTE; }
-    $json = json_encode($data, $jsonFlags);
-    if ($json === false) { $json = '{"error":' . json_encode('json_encode: ' . json_last_error_msg()) . '}'; }
+    $flags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+    if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) { $flags |= JSON_INVALID_UTF8_SUBSTITUTE; }
+    $json = json_encode($data, $flags);
+    if ($json === false) { $json = '{"error":' . json_encode(json_last_error_msg()) . '}'; }
     ?>
-    <script>window.WAREHOUSE_DATA = <?= $json ?>;</script>
+    <script>window.WAREHOUSE_FALLBACK = <?= $json ?>;</script>
     <script src="assets/vendor/three.min.js"></script>
     <script src="assets/vendor/OrbitControls.js"></script>
     <script src="assets/entrepot3d.js"></script>
     <script>
-    /* Diagnostic visible : si Three.js n'a pas pu être chargé (ex. 404 sur le
-       fichier) ou si les données sont absentes, on l'affiche au lieu d'un cadre vide. */
     (function () {
         var el = document.getElementById('scene');
-        if (!el) { return; }
-        if (typeof THREE === 'undefined') {
+        if (el && typeof THREE === 'undefined') {
             el.innerHTML = '<div class="scene-error">⚠ <strong>Three.js n\'a pas pu être chargé.</strong><br>'
-                + 'Ouvrez la console (F12 → onglet Réseau) et vérifiez que '
-                + '<code>assets/vendor/three.min.js</code> répond en 200 (et non 404).<br>'
-                + 'Ce dossier doit exister à côté de <code>entrepot3d.php</code>.</div>';
-        } else if (!window.WAREHOUSE_DATA || window.WAREHOUSE_DATA.error) {
-            el.innerHTML = '<div class="scene-error">⚠ <strong>Données 3D indisponibles.</strong>'
-                + (window.WAREHOUSE_DATA && window.WAREHOUSE_DATA.error ? '<br>' + window.WAREHOUSE_DATA.error : '')
-                + '</div>';
+                + 'Vérifiez <code>assets/vendor/three.min.js</code> (onglet Réseau, statut 200).</div>';
         }
     })();
     </script>

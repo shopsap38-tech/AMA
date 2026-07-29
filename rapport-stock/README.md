@@ -166,25 +166,43 @@ La page `occupation.php` calcule l'occupation du magasin en **palettes** :
 > Les articles sans « Qté/Palette » renseignée ne sont pas comptabilisés (et
 > sont signalés). La grille visuelle s'affiche quand la capacité ≤ 300.
 
-## Entrepôt 3D
+## Entrepôt 3D (WMS)
 
-La page `entrepot3d.php` affiche l'entrepôt en **3D interactive** (Three.js,
-embarqué localement dans `assets/vendor/` — aucun accès Internet requis) :
+La page `entrepot3d.php` affiche un **entrepôt 3D interactif** de niveau WMS
+(type SAP EWM / Manhattan), Three.js embarqué localement dans `assets/vendor/`
+(aucun accès Internet requis) :
 
-- chaque **palette occupée** est une boîte 3D placée dans des bâtis de rack ;
-  les emplacements libres restent en fil de fer (capacité vs occupation) ;
-- **couleur par catégorie** (`U_u_cat`), avec légende et filtres cliquables ;
-- **KPI** : capacité, palettes occupées/libres, taux d'occupation / espace libre ;
-- navigation souris : glisser = pivoter, molette = zoom, clic droit = déplacer ;
-  boutons « Rotation auto » et « Recentrer ».
+- **8 zones (A–H), 343 racks, 11 544 emplacements** générés automatiquement à
+  partir de la structure définie dans `includes/warehouse.php` (constante
+  `ZONES`).
+- Les **palettes occupées** (issues de SQL Server) sont **réparties
+  automatiquement** sur les racks selon le taux d'occupation global, avec une
+  variation par rack (rendu réaliste).
+- Chaque rack affiche son **code** (`A01`…`H38`) et est **coloré par
+  occupation** : 🟢 &lt; 50 %, 🟠 50–80 %, 🔴 &gt; 80 %.
+- **Dashboard** : capacité totale, palettes occupées, disponibles, taux global,
+  et **taux par zone**.
+- **Clic sur un rack** → panneau de détail : code, zone, capacité, palettes
+  occupées, places libres, taux.
+- Navigation caméra libre : glisser = pivoter, molette = zoom, clic droit =
+  déplacer ; boutons « Rotation auto », « Codes racks », « Recentrer ».
 
-> **Note sur les données** : la vue `V_BH_STGlob` ne contient ni l'ancienneté
-> des palettes ni le plan physique (allée/niveau). Contrairement à un outil type
-> Power BI « Bodega 3D » (qui colore par ancienneté et positionne chaque palette
-> réelle), cette page **calcule** les palettes depuis le stock et les **dispose
-> dans une grille de racks générée**, colorées par catégorie. Si vous disposez
-> d'un champ d'ancienneté ou d'un plan (allée/niveau/position), on peut brancher
-> un feu tricolore (vert/jaune/rouge) et un placement fidèle.
+### API PHP
+
+Les données sont fournies par **`warehouse_api.php`** (JSON) : il interroge SQL
+Server (via `DATA_SOURCE`), calcule les palettes occupées puis renvoie
+`{ capacite_totale, occupees, libres, taux, zones[], racks[] }`. La page charge
+cette API en `fetch()` (avec repli sur des données intégrées si l'API est
+indisponible).
+
+> **Adapter la structure** : modifiez la constante `ZONES` dans
+> `includes/warehouse.php` (nombre de racks et capacité par zone). La
+> visualisation et l'API s'ajustent automatiquement.
+>
+> **Note données** : `V_BH_STGlob` ne contient pas le plan physique
+> (allée/niveau/position) ni le rack de chaque palette ; la répartition sur les
+> racks est donc **calculée** à partir du taux d'occupation. Si vous disposez
+> d'une localisation par palette, on peut la brancher pour un placement fidèle.
 
 ## Diagnostic
 
@@ -237,7 +255,9 @@ rapport-stock/
 ├── includes/report.php     Chargement + filtres + tri + totaux
 ├── index.php               Rapport (filtres, tri, synthèse)
 ├── occupation.php          Tableau de bord d'occupation (palettes)
-├── entrepot3d.php          Visualisation 3D de l'entrepôt
+├── entrepot3d.php          Visualisation 3D WMS de l'entrepôt
+├── warehouse_api.php       API JSON (zones, racks, taux) depuis SQL Server
+├── includes/warehouse.php  Structure des zones + répartition des palettes
 ├── assets/vendor/          Three.js + OrbitControls (embarqués, hors-ligne)
 ├── export.php              Export CSV
 ├── outils/export-stock.ps1 Export SQL Server -> CSV via .NET (sans ODBC)
